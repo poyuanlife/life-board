@@ -12,6 +12,7 @@ import {
   taipeiToday,
   toWeeklyCandles,
   type Point,
+  type PriceChange,
   type PriceItem,
   type PricesResponse,
 } from '../src/lib/series.ts';
@@ -88,7 +89,19 @@ async function loadFuel(): Promise<PriceItem[]> {
         // 只取已生效的價格
         if (date && price && date <= today()) points.push({ date, value: Number(price) });
       }
-      return build(def, points);
+      points.sort((a, b) => (a.date < b.date ? -1 : 1));
+
+      // 每一筆跟前一筆比，算出漲跌
+      const changes: PriceChange[] = points.slice(1).map((p, i) => ({
+        date: p.date,
+        price: p.value,
+        change: Math.round((p.value - points[i].value) * 10) / 10,
+      }));
+      return {
+        ...build(def, points),
+        recentWeeks: changes.slice(-4).reverse(), // 本週、上週、上上週、3 週前
+        adjustments: changes.filter((c) => c.change !== 0).slice(-3).reverse(), // 最近 3 次調價
+      };
     })
   );
 }

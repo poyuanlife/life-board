@@ -94,8 +94,8 @@ export default function Home() {
             <Text style={{ color: t.muted, fontSize: 12 }}>⚠️ 部分資料暫時抓不到：{data.errors.join('；')}</Text>
           )}
           {section('fuel')}
-          {section('fx')}
           {section('gold')}
+          {section('fx')}
 
           <PriceGauge items={data.items} />
           {latest && (
