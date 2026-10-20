@@ -223,7 +223,10 @@ async function main() {
   });
 
   const data: PricesResponse = { items, errors, updatedAt: new Date().toISOString() };
-  for (const e of errors) console.warn('⚠️', e);
+  // 在 GitHub Actions 上用 ::warning:: / ::notice:: 格式，結果會直接顯示在執行頁面
+  const gh = !!process.env.GITHUB_ACTIONS;
+  for (const e of errors) console.warn(gh ? `::warning::${e}` : `⚠️ ${e}`);
+  if (gh) console.log(`::notice::成功 ${items.length} 項：${items.map((i) => i.name).join('、')}`);
   if (!items.length) {
     console.error('全部資料源都失敗，不寫入檔案');
     process.exit(1);
