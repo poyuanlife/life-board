@@ -15,6 +15,7 @@ import {
   type PriceItem,
   type PricesResponse,
 } from '../src/lib/series.ts';
+import { updateWeekly } from './weekly.mts';
 
 const WEEKS = 8;
 const DAYS = WEEKS * 7 + 7; // 多抓一週，算第一根 K 線的開盤
@@ -236,6 +237,12 @@ async function main() {
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, JSON.stringify(data));
   console.log(`✅ ${items.length} 項，耗時 ${((Date.now() - started) / 1000).toFixed(1)} 秒 → ${out}`);
+
+  // 有資料源失敗時不更新文章，避免寫出缺項的內容
+  if (!errors.length) {
+    const n = updateWeekly(items, join(import.meta.dirname, '..', 'src', 'content', 'weekly.json'));
+    console.log(`📝 每週觀察文章共 ${n} 篇`);
+  }
 }
 
 main();

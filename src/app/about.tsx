@@ -1,0 +1,76 @@
+import { View } from 'react-native';
+import { ExtLink } from '@/components/ExtLink';
+import { H1, H2, Li, Muted, P } from '@/components/Prose';
+import { SiteLayout } from '@/components/SiteLayout';
+import { meta, PAGES } from '@/lib/meta';
+import { CONTACT_URL } from '@/lib/site';
+
+export function generateMetadata() {
+  return meta(PAGES.about.title, PAGES.about.description);
+}
+
+export default function About() {
+  return (
+    <SiteLayout
+      title={PAGES.about.title}
+      description={PAGES.about.description}
+      maxWidth={760}>
+      <H1>關於本站</H1>
+
+      <View style={{ gap: 8 }}>
+        <P>
+          生活物價看板是一個免費的台灣民生物價整理網站。我們把散落在不同政府網站的油價、匯率、蔬果、雞蛋與豬肉價格整理在同一個畫面，並用「物價溫度計」、紅綠燈號和週 K 線，讓你一眼看出這週什麼變貴、什麼變便宜。
+        </P>
+        <P>每週也會整理一篇「每週物價觀察」，用文字說明本週的漲跌重點，方便安排採買、加油或換匯。</P>
+      </View>
+
+      <View style={{ gap: 8 }}>
+        <H2 id="sources">資料來源</H2>
+        <Li>
+          油價：<ExtLink href="https://www.cpc.com.tw/">台灣中油</ExtLink>
+          公告之汽柴油參考牌價（92、95 無鉛汽油與超級柴油）。
+        </Li>
+        <Li>
+          蔬果：<ExtLink href="https://data.moa.gov.tw/">農業部農業資料開放平臺</ExtLink>
+          「農產品交易行情」，取台北一市場的批發均價。
+        </Li>
+        <Li>雞蛋、白肉雞：農業部農業資料開放平臺「畜禽產品交易行情」，為產地價。</Li>
+        <Li>毛豬：農業部農業資料開放平臺「毛豬交易行情」，為全台各拍賣市場依成交頭數加權的平均價。</Li>
+        <Li>
+          匯率：<ExtLink href="https://github.com/fawazahmed0/exchange-api">Free Currency Exchange Rates API</ExtLink>
+          提供之國際中間價。
+        </Li>
+      </View>
+
+      <View style={{ gap: 8 }}>
+        <H2>更新頻率</H2>
+        <P>
+          網站每天早上 7 點（台灣時間）自動抓取最新資料並更新。油價每週一調整；蔬果、雞蛋、豬肉為每個交易日的行情，休市日沿用前一個交易日的價格。
+        </P>
+      </View>
+
+      <View style={{ gap: 8 }}>
+        <H2>怎麼看</H2>
+        <Li>紅綠燈：🔴 漲、🟡 持平、🟢 跌，比較的是本週與上週。菜價 ±5%、肉蛋 ±3%、匯率 ±1% 以內視為持平。</Li>
+        <Li>週 K 線：每根代表一週。開盤是上週收盤價，收盤是本週最新價格；紅色代表本週比上週貴，綠色代表比上週便宜。</Li>
+        <Li>物價溫度計：油價、蔬果與肉蛋本週漲跌幅的平均值（匯率不列入）。</Li>
+      </View>
+
+      <View style={{ gap: 8 }}>
+        <H2>免責聲明</H2>
+        <P>
+          本站資料來自上述公開資料，由程式自動整理，可能因資料來源延遲、休市或格式變動而出現誤差。蔬果與肉品為批發或產地價，零售價通常為批發價的 2～3 倍；匯率為國際中間價，實際換匯請以銀行牌告為準。本站內容僅供生活參考，不構成任何投資建議。
+        </P>
+      </View>
+
+      <View style={{ gap: 8 }}>
+        <H2>聯絡我們</H2>
+        <P>
+          發現資料錯誤或有任何建議，歡迎到 <ExtLink href={CONTACT_URL}>GitHub 意見回饋</ExtLink> 留言告訴我們。
+        </P>
+      </View>
+
+      <Muted>最後更新：2026 年 10 月 20 日</Muted>
+    </SiteLayout>
+  );
+}
