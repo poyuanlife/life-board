@@ -8,6 +8,7 @@ import { useTheme } from '@/lib/theme';
 const NAV = [
   { href: '/', label: '物價看板' },
   { href: '/weekly', label: '每週觀察' },
+  { href: '/calories', label: '熱量計算' },
   { href: '/about', label: '關於本站' },
 ] as const;
 

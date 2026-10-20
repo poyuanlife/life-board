@@ -15,6 +15,11 @@ export const PAGES = {
     title: '每週物價觀察｜生活物價看板',
     description: '每週整理台灣油價、匯率、蔬果與肉蛋價格的漲跌重點，用數字看懂這週什麼變貴、什麼變便宜。',
   },
+  calories: {
+    title: 'BMR、TDEE 熱量計算機與食物卡路里表｜生活物價看板',
+    description:
+      '免費線上計算基礎代謝率（BMR）、每日總熱量消耗（TDEE）與 BMI，並用台灣常見食物卡路里表（便當、珍奶、早餐、水果）加總今天吃了多少熱量。',
+  },
   about: {
     title: '關於本站｜生活物價看板',
     description:
