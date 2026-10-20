@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
-import { trendOf, type PriceItem } from '@/lib/series';
+import { IN_GAUGE, trendOf, type PriceItem } from '@/lib/series';
 import { TREND_LABEL, useTheme } from '@/lib/theme';
 
 const RANGE = 15; // 量表左右兩端代表 -15% / +15%
@@ -22,7 +22,7 @@ function arc(from: number, to: number, r: number, cx: number, cy: number) {
 // 物價溫度計：綜合油價、菜價、肉蛋本週平均漲跌
 export function PriceGauge({ items }: { items: PriceItem[] }) {
   const t = useTheme();
-  const goods = items.filter((i) => i.category !== 'fx' && i.changePct != null);
+  const goods = items.filter((i) => IN_GAUGE.includes(i.category) && i.changePct != null);
   const avg = goods.length ? goods.reduce((s, i) => s + (i.changePct ?? 0), 0) / goods.length : 0;
   const overall = trendOf(avg, FLAT);
 

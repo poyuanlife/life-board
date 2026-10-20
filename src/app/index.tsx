@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Link } from 'expo-router';
 import Constants from 'expo-constants';
+import { BargainCard } from '@/components/BargainCard';
 import { PriceCard } from '@/components/PriceCard';
 import { PriceGauge } from '@/components/PriceGauge';
 import { SiteLayout } from '@/components/SiteLayout';
@@ -18,7 +19,10 @@ const latest = (weekly as WeeklyArticle[])[0];
 const SECTIONS: Record<Category, { title: string; hint: string }> = {
   fuel: { title: '⛽ 油價', hint: '中油牌價・每週一調整' },
   fx: { title: '💱 匯率', hint: '國際中間價，換匯請以銀行牌告為準・不計入溫度計' },
-  veg: { title: '🥬 蔬果', hint: '農業部・台北一市場批發價（零售價約為 2～3 倍）' },
+  gold: { title: '💰 金價', hint: '國際金價換算（1 錢 = 3.75 公克），銀樓買賣價另計・不計入溫度計' },
+  veg: { title: '🥬 蔬菜', hint: '農業部・台北一市場批發價（零售價約為 2～3 倍）' },
+  fruit: { title: '🍎 水果', hint: '農業部・台北一市場批發價' },
+  fish: { title: '🐟 魚貨海鮮', hint: '農業部・全台魚市場批發價' },
   meat: { title: '🥩 肉品・雞蛋', hint: '農業部・產地/拍賣價' },
 };
 
@@ -91,6 +95,7 @@ export default function Home() {
           )}
           {section('fuel')}
           {section('fx')}
+          {section('gold')}
 
           <PriceGauge items={data.items} />
           {latest && (
@@ -106,11 +111,15 @@ export default function Home() {
             </Link>
           )}
 
+          <BargainCard items={data.items} />
+
           {section('veg')}
+          {section('fruit')}
+          {section('fish')}
           {section('meat')}
 
           <Text style={[styles.footnote, { color: t.faint }]}>
-            燈號：🔴 漲・🟡 持平・🟢 跌（菜價 ±5%、肉蛋 ±3%、匯率 ±1% 以內算持平）{'\n'}
+            燈號：🔴 漲・🟡 持平・🟢 跌（蔬果、魚貨 ±5%、肉蛋 ±3%、匯率與金價 ±1% 以內算持平）{'\n'}
             K 線：每根代表一週，開盤 = 上週收盤，紅 = 收盤比開盤高，綠 = 比開盤低。點或滑過 K 棒可看明細。{'\n'}
             資料更新：{new Date(data.updatedAt).toLocaleString('zh-TW')}（每天早上自動更新）
           </Text>

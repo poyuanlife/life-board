@@ -10,7 +10,7 @@ export type Candle = {
   low: number;
 };
 
-export type Category = 'fuel' | 'veg' | 'meat' | 'fx';
+export type Category = 'fuel' | 'fx' | 'gold' | 'veg' | 'fruit' | 'fish' | 'meat';
 
 export type PriceItem = {
   id: string;
@@ -98,4 +98,17 @@ export type Trend = 'up' | 'flat' | 'down';
 export function trendOf(pct: number | null, threshold: number): Trend {
   if (pct == null || Math.abs(pct) < threshold) return 'flat';
   return pct > 0 ? 'up' : 'down';
+}
+
+// 算進「物價溫度計」的類別（匯率、金價屬於投資/換匯，不算民生物價）
+export const IN_GAUGE: Category[] = ['fuel', 'veg', 'fruit', 'fish', 'meat'];
+// 可以做「划算推薦」的類別（油價固定、匯率金價不算採買）
+export const SHOPPING: Category[] = ['veg', 'fruit', 'fish', 'meat'];
+
+/** 目前價格和最近 8 週收盤平均相比（%），例如 -20 代表比平常便宜 2 成 */
+export function vsAverage(item: PriceItem): number | null {
+  const closes = item.candles.map((c) => c.close);
+  if (closes.length < 4) return null;
+  const avg = closes.reduce((s, v) => s + v, 0) / closes.length;
+  return avg ? Math.round(((item.price - avg) / avg) * 1000) / 10 : null;
 }

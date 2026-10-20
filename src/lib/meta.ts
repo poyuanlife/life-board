@@ -7,9 +7,9 @@ export function meta(title: string, description: string): Metadata {
 
 export const PAGES = {
   home: {
-    title: '生活物價看板｜今日油價、匯率、菜價、蛋價一次看',
+    title: '生活物價看板｜今日油價、匯率、金價、菜價、魚價一次看',
     description:
-      '每天自動更新的台灣生活物價：中油油價、日圓美元匯率、高麗菜等蔬果批發價、雞蛋與豬肉行情，用 K 線和紅綠燈看懂本週漲跌。',
+      '每天自動更新的台灣生活物價：中油油價、日圓美元匯率、金價、蔬菜水果與魚貨批發價、雞蛋與豬肉行情，用 K 線和紅綠燈看懂本週漲跌，還有本週划算推薦。',
   },
   weekly: {
     title: '每週物價觀察｜生活物價看板',

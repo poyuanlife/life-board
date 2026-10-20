@@ -6,7 +6,8 @@ import { TREND_LABEL, useTheme } from '@/lib/theme';
 export function PriceCard({ item }: { item: PriceItem }) {
   const t = useTheme();
   const trend = trendOf(item.changePct, item.threshold);
-  const digits = item.category === 'fx' ? 2 : 1;
+  // 匯率看到小數 2 位、金價取整數，其他 1 位
+  const digits = item.category === 'fx' ? 2 : item.category === 'gold' ? 0 : 1;
   const pct = item.changePct ?? 0;
 
   return (
@@ -29,7 +30,9 @@ export function PriceCard({ item }: { item: PriceItem }) {
       </View>
 
       <View style={styles.priceRow}>
-        <Text style={[styles.price, { color: t.text }]}>{item.price.toFixed(digits)}</Text>
+        <Text style={[styles.price, { color: t.text }]}>
+          {item.price.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })}
+        </Text>
         <Text style={{ color: t.muted, fontSize: 12 }}>{item.unit}</Text>
         <Text style={[styles.pct, { color: t.text }]}>
           {pct > 0 ? '+' : ''}

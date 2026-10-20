@@ -93,44 +93,103 @@ async function loadFuel(): Promise<PriceItem[]> {
   );
 }
 
-// ---------- 蔬果批發價（農業部，台北一市場）----------
-const VEG: { crops: string[]; def: Def }[] = [
-  { crops: ['甘藍-初秋'], def: { id: 'cabbage', name: '高麗菜', icon: '🥬', category: 'veg', unit: '元/公斤', threshold: 5 } },
-  { crops: ['包心白-包白'], def: { id: 'napa', name: '大白菜', icon: '🥬', category: 'veg', unit: '元/公斤', threshold: 5 } },
-  { crops: ['小白菜-土白菜'], def: { id: 'bokchoy', name: '小白菜', icon: '🌿', category: 'veg', unit: '元/公斤', threshold: 5 } },
-  { crops: ['蕹菜-小葉'], def: { id: 'kangkong', name: '空心菜', icon: '🌿', category: 'veg', unit: '元/公斤', threshold: 5 } },
-  { crops: ['青蔥-粉蔥'], def: { id: 'scallion', name: '青蔥', icon: '🧅', category: 'veg', unit: '元/公斤', threshold: 5 } },
-  { crops: ['番茄-牛番茄'], def: { id: 'tomato', name: '牛番茄', icon: '🍅', category: 'veg', unit: '元/公斤', threshold: 5 } },
-  { crops: ['洋蔥-本產', '洋蔥-進口'], def: { id: 'onion', name: '洋蔥', icon: '🧅', category: 'veg', unit: '元/公斤', threshold: 5 } },
-  { crops: ['胡蘿蔔-清洗'], def: { id: 'carrot', name: '胡蘿蔔', icon: '🥕', category: 'veg', unit: '元/公斤', threshold: 5 } },
-  { crops: ['香蕉'], def: { id: 'banana', name: '香蕉', icon: '🍌', category: 'veg', unit: '元/公斤', threshold: 5 } },
+// ---------- 蔬菜、水果批發價（農業部，台北一市場）----------
+type CropDef = { crops: string[]; def: Def };
+const crop = (id: string, name: string, icon: string, category: 'veg' | 'fruit', crops: string[]): CropDef => ({
+  crops,
+  def: { id, name, icon, category, unit: '元/公斤', threshold: 5, note: '台北一市場批發均價' },
+});
+
+const VEG: CropDef[] = [
+  crop('cabbage', '高麗菜', '🥬', 'veg', ['甘藍-初秋']),
+  crop('napa', '大白菜', '🥬', 'veg', ['包心白-包白']),
+  crop('bokchoy', '小白菜', '🌿', 'veg', ['小白菜-土白菜']),
+  crop('kangkong', '空心菜', '🌿', 'veg', ['蕹菜-小葉']),
+  crop('scallion', '青蔥', '🧅', 'veg', ['青蔥-粉蔥']),
+  crop('tomato', '牛番茄', '🍅', 'veg', ['番茄-牛番茄']),
+  crop('onion', '洋蔥', '🧅', 'veg', ['洋蔥-本產', '洋蔥-進口']),
+  crop('carrot', '胡蘿蔔', '🥕', 'veg', ['胡蘿蔔-清洗']),
+  // 水果：挑一年四季大多買得到的品項
+  crop('banana', '香蕉', '🍌', 'fruit', ['香蕉']),
+  crop('guava', '芭樂', '🍏', 'fruit', ['番石榴-珍珠芭']),
+  crop('papaya', '木瓜', '🍈', 'fruit', ['木瓜-網室紅肉']),
+  crop('pineapple', '鳳梨', '🍍', 'fruit', ['鳳梨-金鑽鳳梨']),
+  crop('apple', '蘋果', '🍎', 'fruit', ['蘋果-富士進口']),
+  crop('watermelon', '西瓜', '🍉', 'fruit', ['西瓜-大西瓜']),
 ];
 
-type VegRow = { 交易日期: string; 作物名稱: string; 平均價: number; 交易量: number };
+type TradeRow = { date: string; name: string; price: number; volume: number };
 
-async function loadVeg(): Promise<PriceItem[]> {
-  // 每 7 天一段平行抓
+// 同一天多筆（不同品種或市場）時，用交易量加權平均
+function weightedDaily(rows: TradeRow[], names: string[]): Point[] {
+  const byDate = new Map<string, { sum: number; vol: number }>();
+  for (const r of rows) {
+    if (!names.includes(r.name) || !(r.volume > 0) || !(r.price > 0)) continue;
+    const acc = byDate.get(r.date) ?? { sum: 0, vol: 0 };
+    acc.sum += r.price * r.volume;
+    acc.vol += r.volume;
+    byDate.set(r.date, acc);
+  }
+  return [...byDate].map(([date, a]) => ({ date, value: Math.round((a.sum / a.vol) * 10) / 10 }));
+}
+
+// 某個品項這段期間完全沒交易（例如過季）就略過，不讓整類失敗
+function buildMany(defs: CropDef[], rows: TradeRow[]): PriceItem[] {
+  const out: PriceItem[] = [];
+  for (const { crops, def } of defs) {
+    const points = weightedDaily(rows, crops);
+    if (points.length) out.push(build(def, points));
+    else console.warn(`略過 ${def.name}：最近沒有交易資料`);
+  }
+  return out;
+}
+
+// 每 7 天一段平行抓
+function weekRanges(): [string, string][] {
   const ranges: [string, string][] = [];
   for (let end = 0; end < DAYS; end += 7) ranges.push([daysAgo(end + 6), daysAgo(end)]);
-  const chunks = await pool(ranges, 4, ([s, e]) =>
+  return ranges;
+}
+
+async function loadVeg(): Promise<PriceItem[]> {
+  const chunks = await pool(weekRanges(), 4, ([s, e]) =>
     getJson(`${MOA}/FarmTransData.aspx?StartDate=${rocDot(s)}&EndDate=${rocDot(e)}&Market=%E5%8F%B0%E5%8C%97%E4%B8%80`)
   );
-  const rows: VegRow[] = chunks.flat();
+  const rows: TradeRow[] = chunks.flat().map((r: Record<string, any>) => ({
+    date: fromRoc(r['交易日期']),
+    name: String(r['作物名稱']).trim(),
+    price: Number(r['平均價']),
+    volume: Number(r['交易量']),
+  }));
+  return buildMany(VEG, rows);
+}
 
-  return VEG.map(({ crops, def }) => {
-    // 同一天多個品種時，用交易量加權平均
-    const byDate = new Map<string, { sum: number; vol: number }>();
-    for (const r of rows) {
-      if (!crops.includes(r.作物名稱.trim()) || !r.交易量) continue;
-      const d = fromRoc(r.交易日期);
-      const acc = byDate.get(d) ?? { sum: 0, vol: 0 };
-      acc.sum += r.平均價 * r.交易量;
-      acc.vol += r.交易量;
-      byDate.set(d, acc);
-    }
-    const points = [...byDate].map(([date, a]) => ({ date, value: Math.round((a.sum / a.vol) * 10) / 10 }));
-    return build({ ...def, note: '台北一市場批發均價' }, points);
-  });
+// ---------- 魚貨（農業部，全台魚市場加權平均）----------
+const fish = (id: string, name: string, icon: string, names: string[]): CropDef => ({
+  crops: names,
+  def: { id, name, icon, category: 'fish', unit: '元/公斤', threshold: 5, note: '全台魚市場批發均價' },
+});
+
+const FISH: CropDef[] = [
+  fish('milkfish', '虱目魚', '🐟', ['虱目魚']),
+  fish('tilapia', '吳郭魚', '🐟', ['吳郭魚']),
+  fish('threadfin', '午仔魚', '🐠', ['午仔魚']),
+  fish('hairtail', '白帶魚', '🐟', ['（日本）白帶魚']),
+  fish('shrimp', '白蝦', '🦐', ['白蝦']),
+  fish('oyster', '牡蠣（蚵仔）', '🦪', ['牡蠣養']),
+];
+
+async function loadFish(): Promise<PriceItem[]> {
+  const chunks = await pool(weekRanges(), 4, ([s, e]) =>
+    getJson(`${MOA}/AquaticTransData.aspx?StartDate=${rocCompact(s)}&EndDate=${rocCompact(e)}`)
+  );
+  const rows: TradeRow[] = chunks.flat().map((r: Record<string, any>) => ({
+    date: fromRoc(String(r['交易日期'])),
+    name: String(r['魚貨名稱']).trim(),
+    price: Number(r['平均價']),
+    volume: Number(r['交易量']),
+  }));
+  return buildMany(FISH, rows);
 }
 
 // ---------- 雞蛋、白肉雞（農業部）----------
@@ -178,7 +237,7 @@ async function loadPork(): Promise<PriceItem> {
   );
 }
 
-// ---------- 匯率（fawazahmed0 currency-api，每日）----------
+// ---------- 匯率、金價（fawazahmed0 currency-api，每日）----------
 const FX: { code: string; per: number; def: Def }[] = [
   { code: 'jpy', per: 100, def: { id: 'jpy', name: '日圓', icon: '¥', category: 'fx', unit: '台幣/100 日圓', threshold: 1 } },
   { code: 'usd', per: 1, def: { id: 'usd', name: '美元', icon: '$', category: 'fx', unit: '台幣/1 美元', threshold: 1 } },
@@ -186,28 +245,49 @@ const FX: { code: string; per: number; def: Def }[] = [
   { code: 'eur', per: 1, def: { id: 'eur', name: '歐元', icon: '€', category: 'fx', unit: '台幣/1 歐元', threshold: 1 } },
 ];
 
+// 金價：API 給的是每盎司（31.1035 公克），換算成台灣習慣的「錢」（3.75 公克）
+const GRAMS_PER_OZ = 31.1034768;
+const GRAMS_PER_CHIEN = 3.75;
+
 async function loadFx(): Promise<PriceItem[]> {
   // 每天一筆（今天的資料通常還沒出來，抓不到就略過）
   const dates = lastNDates(DAYS);
-  const days = await pool(dates, 10, (date) =>
-    getJson(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${date}/v1/currencies/twd.json`)
-      .then((j) => ({ date, rates: j.twd as Record<string, number> }))
-      .catch(() => null)
-  );
-  return FX.map(({ code, per, def }) =>
+  const days = (
+    await pool(dates, 10, (date) =>
+      getJson(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${date}/v1/currencies/twd.json`)
+        .then((j) => ({ date, rates: j.twd as Record<string, number> }))
+        .catch(() => null)
+    )
+  ).filter((d): d is { date: string; rates: Record<string, number> } => d != null);
+
+  const fx = FX.map(({ code, per, def }) =>
     build(
       { ...def, note: '國際中間價，非銀行牌告' },
-      days
-        .filter((d) => d && d.rates[code])
-        .map((d) => ({ date: d!.date, value: Math.round((per / d!.rates[code]) * 1000) / 1000 }))
+      days.filter((d) => d.rates[code]).map((d) => ({ date: d.date, value: Math.round((per / d.rates[code]) * 1000) / 1000 }))
     )
   );
+  const gold = build(
+    {
+      id: 'gold',
+      name: '黃金',
+      icon: '💰',
+      category: 'gold',
+      unit: '元/錢',
+      threshold: 1,
+      note: '國際金價換算，銀樓牌價另計',
+    },
+    days
+      .filter((d) => d.rates.xau)
+      .map((d) => ({ date: d.date, value: Math.round((1 / d.rates.xau / GRAMS_PER_OZ) * GRAMS_PER_CHIEN) }))
+  );
+  return [...fx, gold];
 }
 
 // ---------- 組合 ----------
 const SOURCES: [string, () => Promise<PriceItem | PriceItem[]>][] = [
   ['油價', loadFuel],
   ['蔬果', loadVeg],
+  ['魚貨', loadFish],
   ['雞蛋', loadPoultry],
   ['毛豬', loadPork],
   ['匯率', loadFx],

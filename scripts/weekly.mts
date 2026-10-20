@@ -4,7 +4,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { dayNum, fromDayNum, taipeiToday, trendOf, type PriceItem } from '../src/lib/series.ts';
+import { dayNum, fromDayNum, IN_GAUGE, SHOPPING, taipeiToday, trendOf, type Category, type PriceItem } from '../src/lib/series.ts';
 import type { WeeklyArticle, WeeklySection } from '../src/lib/weekly.ts';
 
 type Row = {
@@ -98,7 +98,7 @@ function fxSection(rows: Row[]): WeeklySection | null {
   return { heading: '💱 匯率', paragraphs: paras };
 }
 
-function goodsSection(rows: Row[], cat: 'veg' | 'meat', heading: string): WeeklySection | null {
+function goodsSection(rows: Row[], cat: Category, heading: string): WeeklySection | null {
   const list = rows.filter((r) => r.item.category === cat);
   if (!list.length) return null;
   const ups = list.filter((r) => trend(r) === 'up').sort((a, b) => b.pct - a.pct);
@@ -121,10 +121,43 @@ function goodsSection(rows: Row[], cat: 'veg' | 'meat', heading: string): Weekly
   return { heading, paragraphs: paras };
 }
 
+function goldSection(rows: Row[]): WeeklySection | null {
+  const g = rows.find((r) => r.item.category === 'gold');
+  if (!g) return null;
+  const p = Math.round(g.close).toLocaleString('en-US');
+  const diff = Math.round(g.close - g.open);
+  const dir =
+    Math.abs(g.pct) < 0.1 ? '與上週大致持平' : `較上週${diff > 0 ? '上漲' : '下跌'} ${Math.abs(diff).toLocaleString('en-US')} 元（${sign(g.pct)}%）`;
+  return {
+    heading: '💰 金價',
+    paragraphs: [
+      `國際金價換算約每錢 ${p} 元，${dir}。銀樓的買進、賣出牌價會另外加上工本與價差，實際買賣請以店家報價為準。`,
+    ],
+  };
+}
+
+const CHEAP = -15; // 比近期平均便宜 15% 以上
+const PRICEY = 20; // 貴 20% 以上
+
+function bargainSection(rows: Row[]): WeeklySection | null {
+  const list = rows
+    .filter((r) => SHOPPING.includes(r.item.category) && r.avg != null)
+    .map((r) => ({ r, d: round1(((r.close - r.avg!) / r.avg!) * 100) }));
+  const cheap = list.filter((x) => x.d <= CHEAP).sort((a, b) => a.d - b.d).slice(0, 5);
+  const pricey = list.filter((x) => x.d >= PRICEY).sort((a, b) => b.d - a.d).slice(0, 3);
+  if (!cheap.length && !pricey.length) return null;
+  const paras: string[] = [];
+  if (cheap.length)
+    paras.push(`比近期平均便宜、這週適合多買的有${join(cheap.map((x) => `${x.r.item.name}（便宜 ${Math.abs(x.d).toFixed(0)}%）`))}。`);
+  if (pricey.length)
+    paras.push(`比近期平均貴、可以先少買或找替代品的有${join(pricey.map((x) => `${x.r.item.name}（貴 ${x.d.toFixed(0)}%）`))}。`);
+  return { heading: '🛒 本週划算推薦', paragraphs: paras };
+}
+
 export function buildArticle(items: PriceItem[], week: string, isFinal: boolean): WeeklyArticle | null {
   const rows = rowsForWeek(items, week);
   if (!rows.length) return null;
-  const goods = rows.filter((r) => r.item.category !== 'fx');
+  const goods = rows.filter((r) => IN_GAUGE.includes(r.item.category));
   const avgPct = goods.length ? round1(goods.reduce((s, r) => s + r.pct, 0) / goods.length) : 0;
   const ups = goods.filter((r) => trend(r) === 'up').sort((a, b) => b.pct - a.pct);
   const downs = goods.filter((r) => trend(r) === 'down').sort((a, b) => a.pct - b.pct);
@@ -152,12 +185,16 @@ export function buildArticle(items: PriceItem[], week: string, isFinal: boolean)
   const sections = [
     fuelSection(rows),
     fxSection(rows),
-    goodsSection(rows, 'veg', '🥬 蔬果'),
+    goldSection(rows),
+    bargainSection(rows),
+    goodsSection(rows, 'veg', '🥬 蔬菜'),
+    goodsSection(rows, 'fruit', '🍎 水果'),
+    goodsSection(rows, 'fish', '🐟 魚貨海鮮'),
     goodsSection(rows, 'meat', '🥩 肉品・雞蛋'),
     {
       heading: '📌 閱讀說明',
       paragraphs: [
-        '蔬果為台北一市場批發均價，雞蛋、白肉雞為產地價，毛豬為全台拍賣市場均價，市場或超市的零售價通常是批發價的 2～3 倍，建議把重點放在漲跌趨勢。',
+        '蔬果為台北一市場批發均價，魚貨為全台魚市場批發均價，雞蛋、白肉雞為產地價，毛豬為全台拍賣市場均價；市場或超市的零售價通常是批發價的 2～3 倍，建議把重點放在漲跌趨勢。',
         '本文由生活物價看板依公開資料自動整理，僅供生活採買參考。',
       ],
     },
