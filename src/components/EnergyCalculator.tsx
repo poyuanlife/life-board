@@ -2,9 +2,23 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ACTIVITY, bmi, bmiLevel, bmr, tdee, type Sex } from '@/lib/energy';
 import { useTheme } from '@/lib/theme';
 
-export type Profile = { sex: Sex; age: string; height: string; weight: string; activity: number };
+export type GoalId = 'cut' | 'keep' | 'bulk';
 
-export const DEFAULT_PROFILE: Profile = { sex: 'female', age: '', height: '', weight: '', activity: 1 };
+export type Profile = { sex: Sex; age: string; height: string; weight: string; activity: number; goal: GoalId };
+
+export const DEFAULT_PROFILE: Profile = { sex: 'female', age: '', height: '', weight: '', activity: 1, goal: 'keep' };
+
+export const GOALS: { id: GoalId; label: string; hint: string }[] = [
+  { id: 'cut', label: '減脂', hint: 'TDEE − 500，約每週減 0.5 公斤' },
+  { id: 'keep', label: '維持體重', hint: '吃多少就消耗多少' },
+  { id: 'bulk', label: '增肌', hint: 'TDEE + 300，搭配重量訓練' },
+];
+
+function goalKcal(goal: GoalId, b: number, t: number) {
+  if (goal === 'cut') return Math.max(t - 500, b); // 不低於基礎代謝
+  if (goal === 'bulk') return t + 300;
+  return t;
+}
 
 /** 輸入都合理才回傳計算結果 */
 export function computeEnergy(p: Profile) {
@@ -14,7 +28,8 @@ export function computeEnergy(p: Profile) {
   if (!(age >= 10 && age <= 100 && h >= 100 && h <= 230 && w >= 25 && w <= 250)) return null;
   const b = bmr(p.sex, age, h, w);
   const t = tdee(b, ACTIVITY[p.activity].factor);
-  return { bmr: b, tdee: t, bmi: bmi(h, w) };
+  const goal = GOALS.some((g) => g.id === p.goal) ? p.goal : 'keep';
+  return { bmr: b, tdee: t, bmi: bmi(h, w), weight: w, goal, target: goalKcal(goal, b, t) };
 }
 
 export function EnergyCalculator({ profile, onChange }: { profile: Profile; onChange: (p: Profile) => void }) {
@@ -112,10 +127,17 @@ export function EnergyCalculator({ profile, onChange }: { profile: Profile; onCh
                 <Text style={{ color: t.faint, fontSize: 11 }}>（健康範圍 18.5～24）</Text>
               </View>
               <View style={{ gap: 6 }}>
-                <Text style={{ color: t.muted, fontSize: 13 }}>每日建議攝取</Text>
-                <Goal label="減脂" kcal={Math.max(result.tdee - 500, result.bmr)} hint="TDEE − 500，約每週減 0.5 公斤" />
-                <Goal label="維持體重" kcal={result.tdee} hint="吃多少就消耗多少" />
-                <Goal label="增肌" kcal={result.tdee + 300} hint="TDEE + 300，搭配重量訓練" />
+                <Text style={{ color: t.muted, fontSize: 13 }}>選擇你的目標（下方紀錄會用這個熱量）</Text>
+                {GOALS.map((g) => (
+                  <Goal
+                    key={g.id}
+                    label={g.label}
+                    hint={g.hint}
+                    kcal={goalKcal(g.id, result.bmr, result.tdee)}
+                    on={result.goal === g.id}
+                    onPress={() => set({ goal: g.id })}
+                  />
+                ))}
               </View>
               {result.tdee - 500 < result.bmr && (
                 <Text style={{ color: t.muted, fontSize: 12, lineHeight: 18 }}>
@@ -143,14 +165,22 @@ function Big({ label, value, strong }: { label: string; value: number; strong?: 
   );
 }
 
-function Goal({ label, kcal, hint }: { label: string; kcal: number; hint: string }) {
+function Goal(props: { label: string; kcal: number; hint: string; on: boolean; onPress: () => void }) {
+  const { label, kcal, hint, on, onPress } = props;
   const t = useTheme();
   return (
-    <View style={[styles.goal, { backgroundColor: t.card, borderColor: t.border }]}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="radio"
+      accessibilityState={{ checked: on }}
+      style={[styles.goal, { backgroundColor: on ? t.chip : t.card, borderColor: on ? t.accent : t.border }]}>
+      <View style={[styles.radio, { borderColor: on ? t.accent : t.faint }]}>
+        {on && <View style={[styles.radioDot, { backgroundColor: t.accent }]} />}
+      </View>
       <Text style={{ color: t.text, fontWeight: '700', width: 64 }}>{label}</Text>
       <Text style={{ color: t.muted, fontSize: 12, flex: 1 }}>{hint}</Text>
       <Text style={{ color: t.text, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{kcal.toLocaleString('en-US')} 大卡</Text>
-    </View>
+    </Pressable>
   );
 }
 
