@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { CandleChart } from './CandleChart';
-import { trendOf, type PriceItem } from '@/lib/series';
+import { perCatty, trendOf, type PriceItem } from '@/lib/series';
 import { TREND_LABEL, useTheme } from '@/lib/theme';
 
 export function PriceCard({ item }: { item: PriceItem }) {
@@ -9,6 +9,7 @@ export function PriceCard({ item }: { item: PriceItem }) {
   // 匯率看到小數 2 位、金價取整數，其他 1 位
   const digits = item.category === 'fx' ? 2 : item.category === 'gold' ? 0 : 1;
   const pct = item.changePct ?? 0;
+  const catty = perCatty(item.price, item.unit); // 公斤計價的品項，加上台斤換算
 
   return (
     <View style={[styles.card, { backgroundColor: t.card, borderColor: t.border }]}>
@@ -34,6 +35,11 @@ export function PriceCard({ item }: { item: PriceItem }) {
           {item.price.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })}
         </Text>
         <Text style={{ color: t.muted, fontSize: 12 }}>{item.unit}</Text>
+        {catty != null && (
+          <Text style={[styles.catty, { color: t.muted, backgroundColor: t.iconBg }]}>
+            ≈ {catty.toFixed(1)} 元/台斤
+          </Text>
+        )}
         <Text style={[styles.pct, { color: t.text }]}>
           {pct > 0 ? '+' : ''}
           {pct.toFixed(1)}%
@@ -62,7 +68,8 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   dot: { width: 10, height: 10, borderRadius: 5 },
-  priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
+  priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' },
+  catty: { fontSize: 12, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1, fontVariant: ['tabular-nums'] },
   price: { fontSize: 26, fontWeight: '800', fontVariant: ['tabular-nums'] },
   pct: { marginLeft: 'auto', fontSize: 15, fontWeight: '700', fontVariant: ['tabular-nums'] },
 });

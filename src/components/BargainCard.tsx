@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { SHOPPING, vsAverage, type PriceItem } from '@/lib/series';
+import { perCatty, SHOPPING, vsAverage, type PriceItem } from '@/lib/series';
 import { useTheme } from '@/lib/theme';
 
 const CHEAP = -15; // 比近 8 週平均便宜 15% 以上 → 划算
@@ -46,9 +46,16 @@ function Column({ title, rows, tone, empty }: { title: string; rows: Row[]; tone
         <View key={item.id} style={styles.row}>
           <Text style={{ fontSize: 18 }}>{item.icon}</Text>
           <Text style={{ color: t.text, flex: 1 }}>{item.name}</Text>
-          <Text style={{ color: t.muted, fontSize: 12, fontVariant: ['tabular-nums'] }}>
-            {item.price.toFixed(1)} {item.unit}
-          </Text>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={{ color: t.muted, fontSize: 12, fontVariant: ['tabular-nums'] }}>
+              {item.price.toFixed(1)} {item.unit}
+            </Text>
+            {perCatty(item.price, item.unit) != null && (
+              <Text style={{ color: t.faint, fontSize: 11, fontVariant: ['tabular-nums'] }}>
+                ≈ {perCatty(item.price, item.unit)!.toFixed(1)} 元/台斤
+              </Text>
+            )}
+          </View>
           <Text style={[styles.diff, { color: t.text }]}>
             {diff < 0 ? '▼ 便宜' : '▲ 貴'} {Math.abs(diff).toFixed(0)}%
           </Text>

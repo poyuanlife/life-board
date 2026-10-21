@@ -4,7 +4,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { dayNum, fromDayNum, IN_GAUGE, SHOPPING, taipeiToday, trendOf, type Category, type PriceItem } from '../src/lib/series.ts';
+import { dayNum, fromDayNum, IN_GAUGE, perCatty, SHOPPING, taipeiToday, trendOf, type Category, type PriceItem } from '../src/lib/series.ts';
 import type { WeeklyArticle, WeeklySection } from '../src/lib/weekly.ts';
 
 type Row = {
@@ -105,7 +105,12 @@ function goodsSection(rows: Row[], cat: Category, heading: string): WeeklySectio
   const downs = list.filter((r) => trend(r) === 'down').sort((a, b) => a.pct - b.pct);
   const flats = list.filter((r) => trend(r) === 'flat');
   const unitOf = (r: Row) => r.item.unit.replace('元/', '每');
-  const fmt = (r: Row) => `${r.item.name}（${unitOf(r)} ${price(r)} 元，${sign(r.pct)}%）`;
+  // 公斤計價的加上台斤換算，例如「每公斤 41.7 元／每台斤約 25.0 元」
+  const fmt = (r: Row) => {
+    const catty = perCatty(r.close, r.item.unit);
+    const extra = catty != null ? `／每台斤約 ${catty.toFixed(1)} 元` : '';
+    return `${r.item.name}（${unitOf(r)} ${price(r)} 元${extra}，${sign(r.pct)}%）`;
+  };
 
   const paras: string[] = [];
   if (ups.length) paras.push(`漲幅較明顯的有${join(ups.map(fmt))}。`);
