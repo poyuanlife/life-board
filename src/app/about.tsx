@@ -28,7 +28,7 @@ export default function About() {
         <H2 id="sources">資料來源</H2>
         <Li>
           油價：<ExtLink href="https://www.cpc.com.tw/">台灣中油</ExtLink>
-          公告之汽柴油參考牌價（92、95 無鉛汽油與超級柴油）。
+          公告之汽柴油參考牌價（92、95、98 無鉛汽油與超級柴油）。
         </Li>
         <Li>
           蔬果：<ExtLink href="https://data.moa.gov.tw/">農業部農業資料開放平臺</ExtLink>

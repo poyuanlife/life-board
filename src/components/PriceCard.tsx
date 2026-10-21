@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { ItemIcon } from './ItemIcon';
 import { CandleChart } from './CandleChart';
 import { perKg, trendOf, type PriceItem } from '@/lib/series';
 import { TREND_LABEL, useTheme } from '@/lib/theme';
@@ -15,7 +16,7 @@ export function PriceCard({ item }: { item: PriceItem }) {
     <View style={[styles.card, { backgroundColor: t.card, borderColor: t.border }]}>
       <View style={styles.top}>
         <View style={[styles.iconWrap, { backgroundColor: t.iconBg }]}>
-          <Text style={styles.icon}>{item.icon}</Text>
+          <ItemIcon item={item} size={item.category === 'fuel' ? 44 : 32} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[styles.name, { color: t.text }]}>{item.name}</Text>
@@ -56,7 +57,6 @@ const styles = StyleSheet.create({
   card: { borderRadius: 16, borderWidth: 1, padding: 14, gap: 10, flexGrow: 1 },
   top: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   iconWrap: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  icon: { fontSize: 24 },
   name: { fontSize: 16, fontWeight: '700' },
   light: {
     flexDirection: 'row',

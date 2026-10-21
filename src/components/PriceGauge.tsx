@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { ItemIcon } from './ItemIcon';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
 import { IN_GAUGE, trendOf, type PriceItem } from '@/lib/series';
 import { TREND_LABEL, useTheme } from '@/lib/theme';
@@ -96,7 +97,7 @@ function Mover({ title, list }: { title: string; list: PriceItem[] }) {
       <Text style={{ color: t.muted, fontSize: 12 }}>{title}</Text>
       {list.map((i) => (
         <View key={i.id} style={styles.moverRow}>
-          <Text style={{ fontSize: 18 }}>{i.icon}</Text>
+          <ItemIcon item={i} size={24} />
           <Text style={{ color: t.text, flex: 1 }}>{i.name}</Text>
           <Text style={{ color: t.text, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
             {(i.changePct ?? 0) > 0 ? '▲ +' : '▼ '}

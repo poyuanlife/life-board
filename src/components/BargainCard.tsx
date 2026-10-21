@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { ItemIcon } from './ItemIcon';
 import { perKg, SHOPPING, vsAverage, type PriceItem } from '@/lib/series';
 import { useTheme } from '@/lib/theme';
 
@@ -44,7 +45,7 @@ function Column({ title, rows, tone, empty }: { title: string; rows: Row[]; tone
       {rows.length === 0 && <Text style={{ color: t.faint, fontSize: 13 }}>{empty}</Text>}
       {rows.map(({ item, diff }) => (
         <View key={item.id} style={styles.row}>
-          <Text style={{ fontSize: 18 }}>{item.icon}</Text>
+          <ItemIcon item={item} size={24} />
           <Text style={{ color: t.text, flex: 1 }}>{item.name}</Text>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={{ color: t.muted, fontSize: 12, fontVariant: ['tabular-nums'] }}>

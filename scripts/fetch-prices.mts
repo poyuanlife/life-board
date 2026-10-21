@@ -78,6 +78,7 @@ const lastNDates = (n: number) => Array.from({ length: n }, (_, i) => daysAgo(n 
 const FUEL: { prodid: number; def: Def }[] = [
   { prodid: 1, def: { id: 'fuel92', name: '92 無鉛', icon: '⛽', category: 'fuel', unit: '元/公升', threshold: 0.1 } },
   { prodid: 2, def: { id: 'fuel95', name: '95 無鉛', icon: '⛽', category: 'fuel', unit: '元/公升', threshold: 0.1 } },
+  { prodid: 3, def: { id: 'fuel98', name: '98 無鉛', icon: '⛽', category: 'fuel', unit: '元/公升', threshold: 0.1 } },
   { prodid: 4, def: { id: 'diesel', name: '超級柴油', icon: '🚛', category: 'fuel', unit: '元/公升', threshold: 0.1 } },
 ];
 
