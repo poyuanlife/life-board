@@ -28,6 +28,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "fetch-prices": "node scripts/fetch-prices.mts",
+    "fetch-youtube": "node scripts/fetch-youtube.mts",
     "build": "expo export --platform web",
     "preview": "npm run build && npx expo serve"
   },

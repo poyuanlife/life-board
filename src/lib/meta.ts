@@ -20,6 +20,10 @@ export const PAGES = {
     description:
       '免費計算基礎代謝率（BMR）、TDEE 與 BMI，用食物代換表「份數」記錄每天的澱粉、蛋白質、蔬菜、水果，估算熱量與三大營養素，還能記錄運動、喝水，並比較哪種蛋白質最划算。',
   },
+  youtube: {
+    title: 'YouTube 台灣熱門影片 Top 10｜生活物價看板',
+    description: '每天更新的 YouTube 台灣熱門影片前 10 名，包含音樂、電影預告與遊戲影片，附觀看次數與片長，點了直接看。',
+  },
   about: {
     title: '關於本站｜生活物價看板',
     description:

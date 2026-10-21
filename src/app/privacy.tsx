@@ -27,6 +27,10 @@ export default function Privacy() {
           本站架設於 <ExtLink href="https://www.cloudflare.com/privacypolicy/">Cloudflare</ExtLink>
           ，主機服務商會為了網站安全與正常運作，自動記錄一般性的技術資料，例如 IP 位址、瀏覽器類型、造訪時間與瀏覽的網頁。這些資料不會被用來辨識你的個人身分。
         </P>
+        <P>
+          「YouTube 熱門」頁面的影片縮圖直接從 YouTube 的伺服器載入，YouTube 因此會收到一般性的技術資料（例如 IP 位址）；點擊影片後會前往 YouTube 網站，適用
+          <ExtLink href="https://policies.google.com/privacy">Google 隱私權政策</ExtLink>。
+        </P>
       </View>
 
       <View style={{ gap: 8 }}>

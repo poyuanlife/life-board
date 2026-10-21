@@ -52,6 +52,11 @@ jobs:
             git push
           fi
 
+      - name: 抓 YouTube 熱門影片
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: npm run fetch-youtube
+
       - name: 建置網站
         run: npm run build
 

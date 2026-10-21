@@ -9,6 +9,7 @@ const NAV = [
   { href: '/', label: '物價看板' },
   { href: '/weekly', label: '每週觀察' },
   { href: '/calories', label: '熱量計算' },
+  { href: '/youtube', label: 'YouTube 熱門' },
   { href: '/about', label: '關於本站' },
 ] as const;
 
