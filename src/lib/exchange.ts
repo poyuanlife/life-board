@@ -129,6 +129,75 @@ export function guideFor(kcal: number) {
   return GUIDE.reduce((best, g) => (Math.abs(g.kcal - kcal) < Math.abs(best.kcal - kcal) ? g : best));
 }
 
+// 常見飲食法的每日份數範本：base 是設計時的熱量，套用時會依使用者目標熱量等比例放大縮小
+export type Diet = {
+  id: string;
+  name: string;
+  base: Required<Portions>;
+  fixed?: GroupId[]; // 不隨熱量縮放的類別（例如低醣的澱粉固定）
+  desc: string;
+  tips: string[];
+};
+
+export const DIETS: Diet[] = [
+  {
+    id: 'lowcarb',
+    name: '減脂・低醣',
+    base: { grain: 4, protein: 8, veg: 5, fruit: 2, dairy: 1, fat: 5 },
+    fixed: ['grain', 'veg'],
+    desc: '減少澱粉、吃足蛋白質和蔬菜，常見的減脂做法。澱粉固定 4 份（約 1 碗飯）。',
+    tips: ['澱粉優先選糙米、地瓜、燕麥等原型食物', '每餐先吃菜和蛋白質，最後吃澱粉', '有糖尿病或在吃降血糖藥，請先問醫師'],
+  },
+  {
+    id: 'plate211',
+    name: '211 餐盤',
+    base: { grain: 6, protein: 6, veg: 6, fruit: 2, dairy: 1.5, fat: 4 },
+    fixed: ['veg'],
+    desc: '每餐餐盤分成 4 等份：蔬菜 2、蛋白質 1、澱粉 1，簡單好記，適合外食族。',
+    tips: ['每餐蔬菜占半盤、蛋白質和澱粉各占 1/4 盤', '水果和乳品放在兩餐之間吃', '吃的順序：菜 → 肉 → 飯'],
+  },
+  {
+    id: 'mediterranean',
+    name: '地中海飲食',
+    base: { grain: 9, protein: 5, veg: 5, fruit: 3, dairy: 1, fat: 7 },
+    fixed: ['veg'],
+    desc: '以全穀、蔬果、豆類、魚和橄欖油為主，少紅肉。對心血管健康有幫助，是研究最多的飲食法之一。',
+    tips: ['油脂以橄欖油和堅果為主', '每週吃魚 2 次以上，多用豆類取代紅肉', '乳品選優格、起司，紅肉每週 1～2 次就好'],
+  },
+  {
+    id: 'dash',
+    name: '得舒飲食（降血壓）',
+    base: { grain: 10, protein: 4, veg: 5, fruit: 4, dairy: 2, fat: 3 },
+    fixed: ['veg'],
+    desc: '多蔬果、低脂乳品和全穀，少鹽少紅肉，國健署推薦給血壓偏高的人。',
+    tips: ['乳品選低脂或脫脂', '少醃漬、加工食品，每天鹽不超過 1 茶匙（6 公克）', '白肉、豆類取代紅肉，每天 1 份堅果'],
+  },
+  {
+    id: 'highprotein',
+    name: '高蛋白・增肌',
+    base: { grain: 12, protein: 10, veg: 4, fruit: 3, dairy: 2, fat: 5 },
+    fixed: ['veg'],
+    desc: '提高蛋白質、澱粉足夠，搭配重量訓練幫助長肌肉。',
+    tips: ['蛋白質平均分在每一餐', '訓練後 1～2 小時內吃蛋白質和澱粉', '有腎臟疾病的人不適合高蛋白飲食'],
+  },
+];
+
+const dietKcal = (p: Portions) => nutritionOf(p).kcal;
+
+/** 依目標熱量把飲食範本等比例放大縮小（四捨五入到半份） */
+export function scaleDiet(diet: Diet, target: number | null): Required<Portions> {
+  if (!target) return { ...diet.base };
+  const fixedKcal = dietKcal(Object.fromEntries((diet.fixed ?? []).map((id) => [id, diet.base[id]])));
+  const total = dietKcal(diet.base);
+  const factor = Math.min(1.6, Math.max(0.6, (target - fixedKcal) / (total - fixedKcal)));
+  const out = { ...diet.base };
+  for (const g of GROUPS) {
+    if (diet.fixed?.includes(g.id)) continue;
+    out[g.id] = Math.max(0.5, Math.round(diet.base[g.id] * factor * 2) / 2);
+  }
+  return out;
+}
+
 // 常見外食，一鍵加入（份數為一般份量的粗估）
 export type Preset = { id: string; name: string; p: Portions; extra?: number };
 

@@ -131,21 +131,22 @@ export function DailyLog({ log, onChange, target, weight, goal }: Props) {
         </View>
         {(plan || guide) && (
           <Text style={{ color: t.faint, fontSize: 12, lineHeight: 18 }}>
-            {plan ? '依照你的自訂份數。' : `建議份數參考國健署《每日飲食指南》${guide!.kcal.toLocaleString('en-US')} 大卡等級（一般成人）。`}
+            {plan ? `依照你的自訂份數（${log.planName ?? '自訂'}）。` : `建議份數參考國健署《每日飲食指南》${guide!.kcal.toLocaleString('en-US')} 大卡等級（一般成人）。`}
             綠框＝已吃夠；紅框＝超過上限。
           </Text>
         )}
         {editing ? (
           <PlanEditor
             initial={plan ?? guide?.p ?? {}}
+            initialName={log.planName}
             hasPlan={!!plan}
             target={target}
-            onSave={(p) => {
-              onChange({ ...log, plan: p });
+            onSave={(p, name) => {
+              onChange({ ...log, plan: p, planName: name });
               setEditing(false);
             }}
             onReset={() => {
-              const { plan: _, ...rest } = log;
+              const { plan: _, planName: __, ...rest } = log;
               onChange(rest);
               setEditing(false);
             }}
