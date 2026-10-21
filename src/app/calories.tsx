@@ -5,7 +5,8 @@ import { ProteinValue } from '@/components/ProteinValue';
 import { H1, H2, Li, Muted, P } from '@/components/Prose';
 import { SiteLayout } from '@/components/SiteLayout';
 import { EMPTY_LOG, type Log } from '@/lib/diary';
-import { GROUPS, nutritionOf, portionsText, PRESETS } from '@/lib/exchange';
+import { PortionGuide } from '@/components/PortionGuide';
+import { nutritionOf, portionsText, PRESETS } from '@/lib/exchange';
 import { meta, PAGES } from '@/lib/meta';
 import { useStoredState } from '@/lib/storage';
 import { useTheme } from '@/lib/theme';
@@ -46,19 +47,7 @@ export default function Calories() {
         <P>
           本站依照衛福部「食物代換表」，把食物分成六大類，同一類的每一份熱量和營養素都差不多，所以只要估計吃了「幾份」，就能算出大概的熱量，不用每樣食物都去查。
         </P>
-        <View style={[styles.table, { borderColor: t.border }]}>
-          {GROUPS.map((g, i) => (
-            <View key={g.id} style={[styles.tr, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.border }]}>
-              <Text style={[styles.th, { color: t.text }]}>
-                {g.icon} {g.name}
-              </Text>
-              <Text style={[styles.td, { color: t.muted }]}>
-                {g.kcal} 大卡・蛋白質 {g.p}g・碳水 {g.c}g・脂肪 {g.f}g{'\n'}1 份 ≈ {g.example}
-              </Text>
-            </View>
-          ))}
-        </View>
-        <Muted>※ 豆魚蛋肉類以「中脂」計算（雞蛋、豬里肌、雞腿等）；雞胸肉、魚肉較低，五花肉、香腸較高。乳品以全脂計算。炒菜、炸物通常會多 1～2 份油脂。</Muted>
+        <PortionGuide />
       </View>
 
       <View style={{ gap: 8 }}>

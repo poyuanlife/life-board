@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { MEALS, newId, type Combo, type Meal, type MealEntry } from '@/lib/diary';
 import { GROUPS, nutritionOf, PRESETS, type Portions } from '@/lib/exchange';
 import { useTheme } from '@/lib/theme';
+import { PortionGuide } from './PortionGuide';
 import { Button, Chip, Input, kcalText, Stepper } from './ui';
 
 /** 依現在時間猜是哪一餐 */
@@ -28,6 +29,7 @@ export function MealForm({ combos, onAdd, onSaveCombo, onRemoveCombo }: Props) {
   const [p, setP] = useState<Portions>({});
   const [extra, setExtra] = useState('');
   const [picked, setPicked] = useState<string | null>(null);
+  const [guide, setGuide] = useState(false);
 
   // 等畫面載入後才看時間，避免和靜態網頁對不上
   useEffect(() => setMeal((m) => m ?? guessMeal()), []);
@@ -110,6 +112,33 @@ export function MealForm({ combos, onAdd, onSaveCombo, onRemoveCombo }: Props) {
         })}
       </View>
 
+      {/* 這餐合計＋換算說明 */}
+      <View style={[styles.totalBox, { borderColor: t.border }]}>
+        <Text style={{ color: t.text, fontSize: 15 }}>
+          這餐約 <Text style={{ fontWeight: '800', fontSize: 18 }}>{kcalText(n.kcal)}</Text> 大卡
+        </Text>
+        <Text style={{ color: t.muted, fontSize: 13 }}>
+          蛋白質 {Math.round(n.p)}g・碳水 {Math.round(n.c)}g・脂肪 {Math.round(n.f)}g
+        </Text>
+        <Pressable
+          onPress={() => setGuide(!guide)}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: guide }}
+          style={[styles.guideBtn, { borderColor: t.accent, backgroundColor: guide ? t.chip : 'transparent' }]}>
+          <Text style={{ color: t.accent, fontWeight: '600', fontSize: 14 }}>
+            📖 怎麼算的？看更多份量換算例子 {guide ? '▴' : '▾'}
+          </Text>
+        </Pressable>
+        {guide && (
+          <View style={{ gap: 10, paddingTop: 4 }}>
+            <PortionGuide />
+            <Pressable onPress={() => setGuide(false)} style={{ alignSelf: 'center', padding: 6 }}>
+              <Text style={{ color: t.accent, fontWeight: '600' }}>收起 ▴</Text>
+            </Pressable>
+          </View>
+        )}
+      </View>
+
       <View style={styles.row}>
         <Input
           flex={2}
@@ -131,18 +160,10 @@ export function MealForm({ combos, onAdd, onSaveCombo, onRemoveCombo }: Props) {
         />
       </View>
 
-      <View style={[styles.row, { justifyContent: 'space-between', alignItems: 'center' }]}>
-        <Text style={{ color: t.text, fontSize: 15 }}>
-          這餐約 <Text style={{ fontWeight: '800', fontSize: 18 }}>{kcalText(n.kcal)}</Text> 大卡
-          <Text style={{ color: t.faint, fontSize: 12 }}>
-            　蛋白質 {Math.round(n.p)}g・碳水 {Math.round(n.c)}g・脂肪 {Math.round(n.f)}g
-          </Text>
-        </Text>
-        <View style={styles.row}>
-          {!empty && <Button label="清空" ghost onPress={reset} />}
-          <Button label="存成常吃組合" ghost onPress={save} disabled={empty} />
-          <Button label={`加入${currentMeal}`} onPress={add} disabled={empty} />
-        </View>
+      <View style={[styles.row, { justifyContent: 'flex-end' }]}>
+        {!empty && <Button label="清空" ghost onPress={reset} />}
+        <Button label="存成常吃組合" ghost onPress={save} disabled={empty} />
+        <Button label={`加入${currentMeal}`} onPress={add} disabled={empty} />
       </View>
     </View>
   );
@@ -151,5 +172,7 @@ export function MealForm({ combos, onAdd, onSaveCombo, onRemoveCombo }: Props) {
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   table: { borderWidth: 1, borderRadius: 12, overflow: 'hidden' },
+  totalBox: { borderWidth: 1, borderRadius: 12, padding: 12, gap: 6 },
+  guideBtn: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, alignItems: 'center', marginTop: 4 },
   groupRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 8 },
 });
