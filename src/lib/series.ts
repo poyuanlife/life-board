@@ -10,8 +10,6 @@ export type Candle = {
   low: number;
 };
 
-export type PriceChange = { date: string; price: number; change: number }; // change：跟前一筆相比（元）
-
 export type Category = 'fuel' | 'fx' | 'gold' | 'veg' | 'fruit' | 'fish' | 'meat';
 
 export type PriceItem = {
@@ -25,9 +23,6 @@ export type PriceItem = {
   threshold: number; // 超過這個 % 才算漲或跌
   candles: Candle[];
   note?: string;
-  // 只有油價有：最近幾週的牌價（新到舊），以及最近幾次真正有調整的紀錄
-  recentWeeks?: PriceChange[];
-  adjustments?: PriceChange[];
 };
 
 export type PricesResponse = {

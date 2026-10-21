@@ -1,6 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { CandleChart } from './CandleChart';
-import { FuelHistory } from './FuelHistory';
 import { trendOf, type PriceItem } from '@/lib/series';
 import { TREND_LABEL, useTheme } from '@/lib/theme';
 
@@ -10,8 +9,6 @@ export function PriceCard({ item }: { item: PriceItem }) {
   // 匯率看到小數 2 位、金價取整數，其他 1 位
   const digits = item.category === 'fx' ? 2 : item.category === 'gold' ? 0 : 1;
   const pct = item.changePct ?? 0;
-  // 油價大多數週不變，改顯示最近幾週牌價與調價紀錄
-  const fuel = item.category === 'fuel' && !!item.recentWeeks?.length;
 
   return (
     <View style={[styles.card, { backgroundColor: t.card, borderColor: t.border }]}>
@@ -42,15 +39,9 @@ export function PriceCard({ item }: { item: PriceItem }) {
           {pct.toFixed(1)}%
         </Text>
       </View>
-      <Text style={{ color: t.faint, fontSize: 11, marginTop: -6 }}>
-        {fuel ? '與上週相比・最近 4 週牌價' : '與上週相比・最近 8 週 K 線'}
-      </Text>
+      <Text style={{ color: t.faint, fontSize: 11, marginTop: -6 }}>與上週相比・最近 8 週 K 線</Text>
 
-      {fuel ? (
-        <FuelHistory weeks={item.recentWeeks!} adjustments={item.adjustments ?? []} />
-      ) : (
-        <CandleChart candles={item.candles} digits={digits} />
-      )}
+      <CandleChart candles={item.candles} digits={digits} />
     </View>
   );
 }
