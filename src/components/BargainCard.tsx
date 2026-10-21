@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { perCatty, SHOPPING, vsAverage, type PriceItem } from '@/lib/series';
+import { perKg, SHOPPING, vsAverage, type PriceItem } from '@/lib/series';
 import { useTheme } from '@/lib/theme';
 
 const CHEAP = -15; // 比近 8 週平均便宜 15% 以上 → 划算
@@ -50,9 +50,9 @@ function Column({ title, rows, tone, empty }: { title: string; rows: Row[]; tone
             <Text style={{ color: t.muted, fontSize: 12, fontVariant: ['tabular-nums'] }}>
               {item.price.toFixed(1)} {item.unit}
             </Text>
-            {perCatty(item.price, item.unit) != null && (
+            {perKg(item, item.price) != null && (
               <Text style={{ color: t.faint, fontSize: 11, fontVariant: ['tabular-nums'] }}>
-                ≈ {perCatty(item.price, item.unit)!.toFixed(1)} 元/台斤
+                ≈ {perKg(item, item.price)!.toFixed(1)} 元/公斤
               </Text>
             )}
           </View>

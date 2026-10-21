@@ -4,7 +4,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { dayNum, fromDayNum, IN_GAUGE, perCatty, SHOPPING, taipeiToday, trendOf, type Category, type PriceItem } from '../src/lib/series.ts';
+import { dayNum, fromDayNum, IN_GAUGE, perKg, SHOPPING, taipeiToday, trendOf, type Category, type PriceItem } from '../src/lib/series.ts';
 import type { WeeklyArticle, WeeklySection } from '../src/lib/weekly.ts';
 
 type Row = {
@@ -105,10 +105,10 @@ function goodsSection(rows: Row[], cat: Category, heading: string): WeeklySectio
   const downs = list.filter((r) => trend(r) === 'down').sort((a, b) => a.pct - b.pct);
   const flats = list.filter((r) => trend(r) === 'flat');
   const unitOf = (r: Row) => r.item.unit.replace('元/', '每');
-  // 公斤計價的加上台斤換算，例如「每公斤 41.7 元／每台斤約 25.0 元」
+  // 食物以台斤為主，後面補公斤，例如「每台斤 25.0 元／每公斤約 41.7 元」
   const fmt = (r: Row) => {
-    const catty = perCatty(r.close, r.item.unit);
-    const extra = catty != null ? `／每台斤約 ${catty.toFixed(1)} 元` : '';
+    const kg = perKg(r.item, r.close);
+    const extra = kg != null ? `／每公斤約 ${kg.toFixed(1)} 元` : '';
     return `${r.item.name}（${unitOf(r)} ${price(r)} 元${extra}，${sign(r.pct)}%）`;
   };
 

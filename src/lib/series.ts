@@ -116,7 +116,7 @@ export function vsAverage(item: PriceItem): number | null {
 // 台灣傳統市場多用「台斤」標價：1 台斤 = 600 公克
 export const KG_PER_CATTY = 0.6;
 
-/** 以「元/公斤」計價的品項，換算成每台斤價格；其他單位回傳 null */
-export function perCatty(price: number, unit: string): number | null {
-  return unit === '元/公斤' ? Math.round(price * KG_PER_CATTY * 10) / 10 : null;
+/** 食物主要顯示「元/台斤」，旁邊補上每公斤價格；不是食物或不是台斤計價就回傳 null */
+export function perKg(item: Pick<PriceItem, 'unit' | 'category'>, price: number): number | null {
+  return item.unit === '元/台斤' && SHOPPING.includes(item.category) ? Math.round((price / KG_PER_CATTY) * 10) / 10 : null;
 }

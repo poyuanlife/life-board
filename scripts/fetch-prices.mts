@@ -9,6 +9,8 @@ import {
   changePct,
   dayNum,
   fromDayNum,
+  KG_PER_CATTY,
+  SHOPPING,
   taipeiToday,
   toWeeklyCandles,
   type Point,
@@ -24,6 +26,11 @@ const MOA = 'https://data.moa.gov.tw/Service/OpenData/FromM';
 type Def = Omit<PriceItem, 'price' | 'changePct' | 'candles'>;
 
 function build(def: Def, points: Point[]): PriceItem {
+  // 食物在台灣多用台斤標價，原始資料是「元/公斤」的一律換算成「元/台斤」
+  if (def.unit === '元/公斤' && SHOPPING.includes(def.category)) {
+    def = { ...def, unit: '元/台斤' };
+    points = points.map((p) => ({ ...p, value: Math.round(p.value * KG_PER_CATTY * 10) / 10 }));
+  }
   const candles = toWeeklyCandles(points, WEEKS);
   const last = candles[candles.length - 1];
   if (!last) throw new Error(`${def.name} 沒有資料`);

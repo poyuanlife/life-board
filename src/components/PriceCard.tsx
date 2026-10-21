@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { CandleChart } from './CandleChart';
-import { perCatty, trendOf, type PriceItem } from '@/lib/series';
+import { perKg, trendOf, type PriceItem } from '@/lib/series';
 import { TREND_LABEL, useTheme } from '@/lib/theme';
 
 export function PriceCard({ item }: { item: PriceItem }) {
@@ -9,7 +9,7 @@ export function PriceCard({ item }: { item: PriceItem }) {
   // 匯率看到小數 2 位、金價取整數，其他 1 位
   const digits = item.category === 'fx' ? 2 : item.category === 'gold' ? 0 : 1;
   const pct = item.changePct ?? 0;
-  const catty = perCatty(item.price, item.unit); // 公斤計價的品項，加上台斤換算
+  const kg = perKg(item, item.price); // 食物：主價格是台斤，旁邊補上公斤
 
   return (
     <View style={[styles.card, { backgroundColor: t.card, borderColor: t.border }]}>
@@ -35,9 +35,9 @@ export function PriceCard({ item }: { item: PriceItem }) {
           {item.price.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })}
         </Text>
         <Text style={{ color: t.muted, fontSize: 12 }}>{item.unit}</Text>
-        {catty != null && (
+        {kg != null && (
           <Text style={[styles.catty, { color: t.muted, backgroundColor: t.iconBg }]}>
-            ≈ {catty.toFixed(1)} 元/台斤
+            ≈ {kg.toFixed(1)} 元/公斤
           </Text>
         )}
         <Text style={[styles.pct, { color: t.text }]}>
