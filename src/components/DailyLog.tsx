@@ -13,17 +13,20 @@ import {
 } from '@/lib/diary';
 import { fmtNum, GROUPS, guideFor, nutritionOf, portionsText } from '@/lib/exchange';
 import { useTheme } from '@/lib/theme';
+import type { GoalId } from './EnergyCalculator';
 import { ExerciseLog, Remove, WaterLog } from './ExerciseWater';
+import { fmtBowls, PlanEditor } from './PlanEditor';
 import { MealForm } from './MealForm';
 import { kcalText, Panel } from './ui';
 import { WeekChart } from './WeekChart';
 
-type Props = { log: Log; onChange: (log: Log) => void; target: number | null; weight: number | null };
+type Props = { log: Log; onChange: (log: Log) => void; target: number | null; weight: number | null; goal: GoalId };
 
-export function DailyLog({ log, onChange, target, weight }: Props) {
+export function DailyLog({ log, onChange, target, weight, goal }: Props) {
   const t = useTheme();
   const [today, setToday] = useState('');
   const [date, setDate] = useState('');
+  const [editing, setEditing] = useState(false);
 
   // 日期要在使用者的瀏覽器裡決定，不能用網站建置當天的日期
   useEffect(() => {
@@ -38,6 +41,7 @@ export function DailyLog({ log, onChange, target, weight }: Props) {
   const update = (patch: Partial<Day>) => onChange(setDay(log, date, { ...day, ...patch }));
   const { portions, food, burned, net } = dayTotals(day);
   const guide = target ? guideFor(target) : null;
+  const plan = log.plan && GROUPS.some((g) => (log.plan![g.id] ?? 0) > 0) ? log.plan : null;
   const remain = target != null ? target - net : null;
   const pct = target ? Math.min(1, Math.max(0, net) / target) : 0;
   const macroKcal = food.p * 4 + food.c * 4 + food.f * 9 || 1;
@@ -95,14 +99,15 @@ export function DailyLog({ log, onChange, target, weight }: Props) {
           </Text>
         )}
 
-        {/* 份數 vs 建議 */}
+        {/* 份數 vs 建議（或自訂計畫） */}
         <View style={styles.groups}>
           {GROUPS.map((g) => {
             const have = portions[g.id] ?? 0;
-            const need = guide?.p[g.id];
-            // 油脂是「不要超過」，其他類是「要吃夠」
+            const need = plan ? (plan[g.id] ?? 0) : guide?.p[g.id];
+            // 油脂一律是「不要超過」；有自訂份數或在減脂時，澱粉也是「不要超過」；其他類是「要吃夠」
+            const isLimit = g.id === 'fat' || (g.id === 'grain' && (!!plan || goal === 'cut'));
             const tone =
-              need == null ? t.border : g.id === 'fat' ? (have > need ? t.up : t.border) : have >= need ? t.down : t.border;
+              need == null ? t.border : isLimit ? (have > need ? t.up : t.border) : need > 0 && have >= need ? t.down : t.border;
             return (
               <View key={g.id} style={[styles.groupTile, { backgroundColor: t.card, borderColor: tone }]}>
                 <Text style={{ color: t.muted, fontSize: 12 }}>
@@ -110,16 +115,46 @@ export function DailyLog({ log, onChange, target, weight }: Props) {
                 </Text>
                 <Text style={{ color: t.text, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
                   {fmtNum(have)}
-                  {need != null && <Text style={{ color: t.faint, fontWeight: '400', fontSize: 12 }}> / {fmtNum(need)} 份</Text>}
+                  {need != null && (
+                    <Text style={{ color: t.faint, fontWeight: '400', fontSize: 12 }}>
+                      {' '}/ {isLimit ? '最多 ' : ''}
+                      {fmtNum(need)} 份
+                    </Text>
+                  )}
                 </Text>
+                {g.id === 'grain' && need != null && need > 0 && (
+                  <Text style={{ color: t.faint, fontSize: 11 }}>約 {fmtBowls(need)} 碗飯</Text>
+                )}
               </View>
             );
           })}
         </View>
-        {guide && (
-          <Text style={{ color: t.faint, fontSize: 12 }}>
-            建議份數參考國健署《每日飲食指南》{guide.kcal.toLocaleString('en-US')} 大卡等級。綠框代表已吃夠；油脂變紅框代表吃太多了。
+        {(plan || guide) && (
+          <Text style={{ color: t.faint, fontSize: 12, lineHeight: 18 }}>
+            {plan ? '依照你的自訂份數。' : `建議份數參考國健署《每日飲食指南》${guide!.kcal.toLocaleString('en-US')} 大卡等級（一般成人）。`}
+            綠框＝已吃夠；紅框＝超過上限。
           </Text>
+        )}
+        {editing ? (
+          <PlanEditor
+            initial={plan ?? guide?.p ?? {}}
+            hasPlan={!!plan}
+            target={target}
+            onSave={(p) => {
+              onChange({ ...log, plan: p });
+              setEditing(false);
+            }}
+            onReset={() => {
+              const { plan: _, ...rest } = log;
+              onChange(rest);
+              setEditing(false);
+            }}
+            onClose={() => setEditing(false)}
+          />
+        ) : (
+          <Pressable onPress={() => setEditing(true)} style={[styles.planBtn, { borderColor: t.accent }]}>
+            <Text style={{ color: t.accent, fontWeight: '600' }}>{plan ? '⚙️ 修改我的每日份數' : '⚙️ 自訂每日份數（例如營養師給的菜單）'}</Text>
+          </Pressable>
         )}
       </View>
 
@@ -219,6 +254,7 @@ const styles = StyleSheet.create({
   bar: { height: 8, borderRadius: 4, overflow: 'hidden' },
   macros: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   groups: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  planBtn: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, alignItems: 'center' },
   groupTile: { flexGrow: 1, flexBasis: 90, borderWidth: 1, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6 },
   item: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   twoCol: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },

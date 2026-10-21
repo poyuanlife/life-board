@@ -10,7 +10,8 @@ export type ExerciseEntry = { id: string; name: string; minutes: number; kcal: n
 export type Day = { meals: MealEntry[]; exercise: ExerciseEntry[]; water: number };
 export type Combo = { id: string; name: string; p: Portions; extra: number };
 
-export type Log = { days: Record<string, Day>; combos: Combo[] };
+// plan：使用者自訂的每日份數（例如營養師給的減脂菜單）；沒設定就用國健署建議
+export type Log = { days: Record<string, Day>; combos: Combo[]; plan?: Portions };
 
 export const EMPTY_LOG: Log = { days: {}, combos: [] };
 export const EMPTY_DAY: Day = { meals: [], exercise: [], water: 0 };

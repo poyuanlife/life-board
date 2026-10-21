@@ -34,7 +34,7 @@ export default function Calories() {
 
       <View style={{ gap: 10 }}>
         <H2>📅 每日飲食紀錄</H2>
-        <DailyLog log={log} onChange={setLog} target={energy?.target ?? null} weight={energy?.weight ?? null} />
+        <DailyLog log={log} onChange={setLog} target={energy?.target ?? null} weight={energy?.weight ?? null} goal={energy?.goal ?? profile.goal} />
       </View>
 
       <View style={{ gap: 10 }}>
