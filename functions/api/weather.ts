@@ -8,11 +8,15 @@ const ORDER = [
   '嘉義市', '嘉義縣', '臺南市', '高雄市', '屏東縣', '宜蘭縣', '花蓮縣', '臺東縣', '澎湖縣', '金門縣', '連江縣',
 ];
 
-// 各縣市優先採用的代表測站（其他縣市自動挑海拔最低的測站，避免拿到高山的溫度）
-const PREFERRED: Record<string, string> = {
-  臺北市: '臺北', 新北市: '板橋', 基隆市: '基隆', 桃園市: '新屋', 新竹市: '新竹', 臺中市: '臺中', 嘉義市: '嘉義',
-  臺南市: '臺南', 高雄市: '高雄', 宜蘭縣: '宜蘭', 花蓮縣: '花蓮', 臺東縣: '臺東', 澎湖縣: '澎湖', 金門縣: '金門', 連江縣: '馬祖',
+// 各縣市的代表測站（依序找，第一個有資料的就用）。新竹市沒有合適的測站，借用竹北的「新竹」站。
+// 都沒有時，挑該縣市海拔最低、不在國道上的測站，避免拿到高山或高速公路的溫度。
+const PREFERRED: Record<string, string[]> = {
+  臺北市: ['臺北'], 新北市: ['新北', '板橋', '淡水'], 基隆市: ['基隆'], 桃園市: ['桃園', '新屋'], 新竹市: ['新竹'],
+  新竹縣: ['新竹'], 苗栗縣: ['苗栗農改', '竹南'], 臺中市: ['臺中'], 彰化縣: ['彰師大', '田中'], 南投縣: ['南投', '臺大竹山'],
+  雲林縣: ['斗六', '雲林分場'], 嘉義市: ['嘉義'], 嘉義縣: ['太保', '嘉義分場'], 臺南市: ['臺南'], 高雄市: ['高雄'],
+  屏東縣: ['屏東', '恆春'], 宜蘭縣: ['宜蘭'], 花蓮縣: ['花蓮'], 臺東縣: ['臺東'], 澎湖縣: ['澎湖'], 金門縣: ['金門'], 連江縣: ['馬祖'],
 };
+const HIGHWAY = /^(國\d|國[一二三五]|西濱|快速)/;
 
 function forecast(records: any): Map<string, Period[]> {
   const out = new Map<string, Period[]>();
@@ -38,16 +42,20 @@ function forecast(records: any): Map<string, Period[]> {
 
 function observations(records: any): Map<string, CountyWeather['now']> {
   const byCounty = new Map<string, any[]>();
+  const byName = new Map<string, any>();
   for (const s of arr(g(records, 'Station'))) {
     const county = g(s, 'GeoInfo.CountyName');
     if (!county || num(g(s, 'WeatherElement.AirTemperature')) == null) continue;
-    byCounty.set(county, [...(byCounty.get(county) ?? []), s]);
+    byName.set(g(s, 'StationName'), s);
+    if (!HIGHWAY.test(g(s, 'StationName') ?? '')) byCounty.set(county, [...(byCounty.get(county) ?? []), s]);
   }
   const out = new Map<string, CountyWeather['now']>();
-  for (const [county, list] of byCounty) {
+  for (const county of new Set([...byCounty.keys(), ...Object.keys(PREFERRED)])) {
+    const list = byCounty.get(county) ?? [];
     const s =
-      list.find((x) => g(x, 'StationName') === PREFERRED[county]) ??
+      (PREFERRED[county] ?? []).map((n) => byName.get(n)).find(Boolean) ??
       [...list].sort((a, b) => (num(g(a, 'GeoInfo.StationAltitude')) ?? 0) - (num(g(b, 'GeoInfo.StationAltitude')) ?? 0))[0];
+    if (!s) continue;
     const w = g(s, 'WeatherElement');
     const weather = String(g(w, 'Weather') ?? '');
     out.set(county, {

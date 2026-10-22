@@ -42,3 +42,6 @@ yarn-error.*
 
 # 每天由 GitHub Actions 產生的物價資料
 public/data/
+
+# wrangler 本機暫存
+.wrangler/

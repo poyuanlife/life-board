@@ -19,7 +19,7 @@ function parse(records: any, big: boolean): Quake[] {
     return {
       no: String(g(q, 'EarthquakeNo') ?? ''),
       big,
-      time: String(g(info, 'OriginTime') ?? ''),
+      time: String(g(info, 'OriginTime') ?? '').replace('T', ' ').slice(0, 19),
       location: String(g(info, 'Epicenter.Location') ?? ''),
       depth: num(g(info, 'FocalDepth')),
       mag: num(g(info, 'EarthquakeMagnitude.MagnitudeValue')),
