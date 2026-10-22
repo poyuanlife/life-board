@@ -41,6 +41,10 @@ export default function About() {
           匯率：<ExtLink href="https://github.com/fawazahmed0/exchange-api">Free Currency Exchange Rates API</ExtLink>
           提供之國際中間價。
         </Li>
+        <Li>
+          天氣、地震、颱風：<ExtLink href="https://opendata.cwa.gov.tw/">中央氣象署氣象資料開放平臺</ExtLink>
+          之縣市 36 小時預報、即時觀測、有感地震報告與颱風路徑；地震即時畫面嵌入自 YouTube 頻道「台灣地震監視」。
+        </Li>
         <Li>金價：同上資料源的國際金價（每盎司），換算為新台幣每錢（1 錢 = 3.75 公克），不含銀樓工本與價差。</Li>
       </View>
 

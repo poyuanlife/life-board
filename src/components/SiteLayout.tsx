@@ -7,6 +7,7 @@ import { useTheme } from '@/lib/theme';
 
 const NAV = [
   { href: '/', label: '物價看板' },
+  { href: '/weather', label: '天氣地震' },
   { href: '/weekly', label: '每週觀察' },
   { href: '/calories', label: '熱量計算' },
   { href: '/youtube', label: 'YouTube 熱門' },
@@ -104,7 +105,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   brand: { fontSize: 17, fontWeight: '800' },
-  nav: { flexDirection: 'row', gap: 16 },
+  nav: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 16, rowGap: 4 },
   navLink: { fontSize: 14, paddingVertical: 4, borderBottomWidth: 2, borderBottomColor: 'transparent' },
   inner: { width: '100%', paddingHorizontal: 16, paddingVertical: 20, gap: 20, flexGrow: 1 },
   footer: { width: '100%', borderTopWidth: 1, alignItems: 'center', marginTop: 20 },
