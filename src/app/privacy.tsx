@@ -3,7 +3,7 @@ import { ExtLink } from '@/components/ExtLink';
 import { H1, H2, Li, Muted, P } from '@/components/Prose';
 import { SiteLayout } from '@/components/SiteLayout';
 import { meta, PAGES } from '@/lib/meta';
-import { CONTACT_EMAIL, CONTACT_URL } from '@/lib/site';
+import { CONTACT_EMAIL } from '@/lib/site';
 
 export function generateMetadata() {
   return meta(PAGES.privacy.title, PAGES.privacy.description);
@@ -73,7 +73,7 @@ export default function Privacy() {
       <View style={{ gap: 8 }}>
         <H2>七、聯絡我們</H2>
         <P>
-          對本政策有任何疑問，歡迎來信 <ExtLink href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</ExtLink>，或到 <ExtLink href={CONTACT_URL}>GitHub 意見回饋</ExtLink> 留言。
+          對本政策有任何疑問，歡迎來信 <ExtLink href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</ExtLink>。
         </P>
       </View>
 
