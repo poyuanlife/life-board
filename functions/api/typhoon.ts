@@ -57,7 +57,24 @@ function grade(wind: number | null) {
   return '熱帶性低氣壓';
 }
 
-export const onRequestGet = endpoint(1800, [{ dataset: 'W-C0034-005' }], ([records]) => {
+// 氣象署官網「颱風消息」頁用的資料檔，裡面有最新路徑潛勢圖的發布時間（檔名會用到）
+async function officialImage(): Promise<{ image: string | null; imageTime: string }> {
+  try {
+    const js = await (await fetch('https://www.cwa.gov.tw/Data/js/typhoon/TY_NEWS-Data.js', { headers: { 'User-Agent': 'Mozilla/5.0' } })).text();
+    const stamp = js.match(/TY_DataTime\s*=\s*'(\d{12})'/)?.[1];
+    const path = js.match(/DataPath\s*=\s*'([\w/]+)'/)?.[1] ?? 'typhoon/TY_NEWS/';
+    const time = js.match(/TY_TIME\s*=\s*\{'C':'([^']+)'/)?.[1] ?? '';
+    if (!stamp) return { image: null, imageTime: '' };
+    const image = `https://www.cwa.gov.tw/Data/${path}Download_PTA_${stamp}_zhtw.png`;
+    // 確認圖片真的存在
+    const head = await fetch(image, { method: 'HEAD', headers: { 'User-Agent': 'Mozilla/5.0' } });
+    return head.ok ? { image, imageTime: time } : { image: null, imageTime: '' };
+  } catch {
+    return { image: null, imageTime: '' };
+  }
+}
+
+export const onRequestGet = endpoint(1800, [{ dataset: 'W-C0034-005' }], async ([records]) => {
   const cyclones: Cyclone[] = arr(g(records, 'TropicalCyclones.TropicalCyclone')).map((c) => {
     const name = String(g(c, 'CwaTyphoonName') ?? '');
     const en = String(g(c, 'TyphoonName') ?? '');
@@ -73,5 +90,7 @@ export const onRequestGet = endpoint(1800, [{ dataset: 'W-C0034-005' }], ([recor
       forecast,
     };
   });
-  return { cyclones: cyclones.filter((c) => c.past.length) };
+  const list = cyclones.filter((c) => c.past.length);
+  // 有颱風才去找官方路徑圖
+  return { cyclones: list, ...(list.length ? await officialImage() : { image: null, imageTime: '' }) };
 });

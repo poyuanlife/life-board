@@ -65,7 +65,13 @@ export type Cyclone = {
   forecast: TrackPoint[];
 };
 
-export type TyphoonResponse = { cyclones: Cyclone[]; updatedAt: string; error?: string };
+export type TyphoonResponse = {
+  cyclones: Cyclone[];
+  image: string | null; // 氣象署官網的路徑潛勢預報圖（全區域）
+  imageTime: string; // 圖的發布時間，例如「民國115年10月22日14時」
+  updatedAt: string;
+  error?: string;
+};
 
 // 震度排序：0級 < 1級 < … < 5弱 < 5強 < 6弱 < 6強 < 7級
 export function intensityRank(s: string) {

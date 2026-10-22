@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Link } from 'expo-router';
 import { Card } from '@/components/Card';
 import { ExtLink } from '@/components/ExtLink';
 import { LiveEmbed } from '@/components/LiveEmbed';
@@ -252,11 +253,32 @@ function TyphoonSection() {
       )}
       {list.length > 0 && (
         <>
-          <TyphoonMap cyclones={list} />
-          <View style={styles.legend}>
-            <Text style={{ color: t.up, fontSize: 12 }}>━ 過去路徑</Text>
-            <Text style={{ color: t.flat, fontSize: 12 }}>╍ 預測路徑（圓圈為 70% 機率範圍）</Text>
-          </View>
+          {state.data?.image ? (
+            <View style={{ gap: 4 }}>
+              <Link href={state.data.image as `https://${string}`} target="_blank" rel="noopener noreferrer" asChild>
+                <Pressable>
+                  <Image
+                    source={{ uri: state.data.image }}
+                    style={styles.ptaImage}
+                    resizeMode="contain"
+                    accessibilityLabel="中央氣象署颱風路徑潛勢預報圖"
+                  />
+                </Pressable>
+              </Link>
+              <Muted>
+                圖片來源：中央氣象署路徑潛勢預報（{state.data.imageTime}發布），點圖可看大圖。彩色線為過去路徑，有色區域為預測路徑 70% 機率範圍。
+              </Muted>
+            </View>
+          ) : (
+            <>
+              {/* 抓不到官方圖時，用本站自己畫的簡易路徑圖 */}
+              <TyphoonMap cyclones={list} />
+              <View style={styles.legend}>
+                <Text style={{ color: t.up, fontSize: 12 }}>━ 過去路徑</Text>
+                <Text style={{ color: t.flat, fontSize: 12 }}>╍ 預測路徑（圓圈為 70% 機率範圍）</Text>
+              </View>
+            </>
+          )}
           {list.map((c) => {
             const now = c.past[c.past.length - 1];
             return (
@@ -330,4 +352,5 @@ const styles = StyleSheet.create({
   area: { fontSize: 12, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
   report: { width: '100%', aspectRatio: 1, maxWidth: 480, alignSelf: 'center' },
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  ptaImage: { width: '100%', aspectRatio: 956 / 700, borderRadius: 10 },
 });

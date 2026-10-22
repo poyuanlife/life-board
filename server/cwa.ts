@@ -55,7 +55,7 @@ type Source = { dataset: string; params?: Record<string, string> };
  * 成功的結果在 Cloudflare 快取 ttl 秒，很多人同時看也只會向氣象署抓一次。
  * 網址加 ?raw=1 會回傳氣象署原始資料（排查格式問題用，不含授權碼）。
  */
-export function endpoint(ttl: number, sources: Source[], build: (records: any[]) => object) {
+export function endpoint(ttl: number, sources: Source[], build: (records: any[]) => object | Promise<object>) {
   return async (ctx: Ctx) => {
     const key = ctx.env.CWA_API_KEY;
     if (!key) return json({ error: '網站尚未設定氣象署授權碼' }, 503, 0);
@@ -72,7 +72,7 @@ export function endpoint(ttl: number, sources: Source[], build: (records: any[])
     try {
       const records = await Promise.all(sources.map((s) => fetchDataset(key, s.dataset, s.params ?? {})));
       if (raw) return json(records, 200, 0);
-      const res = json({ ...build(records), updatedAt: new Date().toISOString() }, 200, Math.min(ttl, 60));
+      const res = json({ ...(await build(records)), updatedAt: new Date().toISOString() }, 200, Math.min(ttl, 60));
       if (cache) {
         // Cloudflare 快取看 s-maxage，瀏覽器看 max-age
         const stored = new Response(res.clone().body, res);
