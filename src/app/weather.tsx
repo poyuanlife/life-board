@@ -16,7 +16,7 @@ import {
   type WeatherResponse,
 } from '@/lib/cwa';
 import { meta, PAGES } from '@/lib/meta';
-import { taipeiTime } from '@/lib/prices-data';
+import { PRICES, taipeiTime } from '@/lib/prices-data';
 import { taipeiToday } from '@/lib/series';
 import { useStoredState } from '@/lib/storage';
 import { useTheme, type Theme } from '@/lib/theme';
@@ -32,12 +32,15 @@ const LIVE_VIDEO = (youtube as YouTubeResponse).quakeLive || 'KyT4qSK8lJo';
 
 type Load<T> = { data?: T; error?: string; loading: boolean };
 
+// 每次部署都不一樣的版本號（建置時間），加在 API 網址上，網站更新後就不會拿到舊程式的快取
+const VERSION = encodeURIComponent(PRICES.updatedAt);
+
 /** 打開頁面時向本站的 /api 抓最新資料；every 秒數 > 0 時會定時重抓 */
 function useApi<T extends { error?: string }>(path: string, every = 0) {
   const [state, setState] = useState<Load<T>>({ loading: true });
   const load = useCallback(async () => {
     try {
-      const res = await fetch(path);
+      const res = await fetch(`${path}?v=${VERSION}`);
       const body = (await res.json()) as T;
       if (!res.ok || body.error) throw new Error(body.error ?? `HTTP ${res.status}`);
       setState({ data: body, loading: false });
