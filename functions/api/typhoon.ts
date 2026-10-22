@@ -57,7 +57,7 @@ function grade(wind: number | null) {
   return '熱帶性低氣壓';
 }
 
-export const onRequestGet = endpoint(600, [{ dataset: 'W-C0034-005' }], ([records]) => {
+export const onRequestGet = endpoint(1800, [{ dataset: 'W-C0034-005' }], ([records]) => {
   const cyclones: Cyclone[] = arr(g(records, 'TropicalCyclones.TropicalCyclone')).map((c) => {
     const name = String(g(c, 'CwaTyphoonName') ?? '');
     const en = String(g(c, 'TyphoonName') ?? '');

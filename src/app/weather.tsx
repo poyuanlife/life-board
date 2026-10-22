@@ -216,14 +216,14 @@ function QuakeRow({ q }: { q: Quake }) {
 
 function QuakeSection() {
   const t = useTheme();
-  const state = useApi<QuakeResponse>('/api/quakes', 60);
+  const state = useApi<QuakeResponse>('/api/quakes', 240);
   return (
     <Card title="地震資訊" icon="🌏">
       <LiveEmbed videoId={LIVE_VIDEO} title="台灣地震監視" />
       <Muted>
         即時畫面來自 YouTube 頻道
         <ExtLink href="https://www.youtube.com/channel/UCa32OtZqhDqDqCHeWO477qg">台灣地震監視</ExtLink>
-        ，版權屬原作者，本站僅透過 YouTube 官方播放器嵌入。下方為中央氣象署地震報告，頁面開著時每分鐘自動更新。本頁不是地震預警，請以手機強震即時警報為準。
+        ，版權屬原作者，本站僅透過 YouTube 官方播放器嵌入。下方為中央氣象署地震報告，頁面開著時每 4 分鐘自動更新。本頁不是地震預警，請以手機強震即時警報為準。
       </Muted>
       <Status state={state} what="地震報告" />
       {state.data && state.data.quakes.length === 0 && <Text style={{ color: t.muted }}>最近沒有有感地震。</Text>}
@@ -239,7 +239,7 @@ function QuakeSection() {
 
 function TyphoonSection() {
   const t = useTheme();
-  const state = useApi<TyphoonResponse>('/api/typhoon');
+  const state = useApi<TyphoonResponse>('/api/typhoon', 1800);
   const list = state.data?.cyclones ?? [];
   return (
     <Card title="颱風動態" icon="🌀">
@@ -296,7 +296,7 @@ function TyphoonSection() {
         </>
       )}
       <Muted>
-        資料來自中央氣象署颱風路徑，約每 3 小時更新。颱風警報與詳細說明請看
+        資料來自中央氣象署颱風路徑，本站每 30 分鐘更新（氣象署約每 3 小時發布）。颱風警報與詳細說明請看
         <ExtLink href="https://www.cwa.gov.tw/V8/C/P/Typhoon/TY_NEWS.html">氣象署颱風消息</ExtLink>。
       </Muted>
     </Card>
