@@ -15,7 +15,15 @@ const TAIWAN = [
 const W = 400;
 const H = 320;
 
-export function TyphoonMap({ cyclones }: { cyclones: Cyclone[] }) {
+// 只畫最近 3 天的路徑，不然颱風從很遠的地方生成時，台灣會被縮得很小
+function recent(c: Cyclone): Cyclone {
+  const last = Date.parse(c.past[c.past.length - 1]?.time ?? '');
+  if (!Number.isFinite(last)) return c;
+  return { ...c, past: c.past.filter((p) => !(last - Date.parse(p.time) > 72 * 3600000)) };
+}
+
+export function TyphoonMap({ cyclones: all }: { cyclones: Cyclone[] }) {
+  const cyclones = all.map(recent);
   const t = useTheme();
   const [w, setW] = useState(0);
   // 畫面範圍：預設台灣周邊，颱風跑出去就把範圍放大

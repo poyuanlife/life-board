@@ -52,13 +52,15 @@ export type TrackPoint = {
   speed: number | null; // 移動速度 km/h
   dir: string;
   radius: number | null; // 分析點：七級風暴風半徑；預測點：70% 機率半徑（公里）
+  radius25: number | null; // 十級風暴風半徑（公里）
+  prediction: string; // 氣象署的移動預測文字，例如「以每小時14轉21公里速度，向西北轉北北西進行」
   tau: number | null; // 預測點：幾小時後
 };
 
 export type Cyclone = {
   name: string; // 中文名（還是熱帶性低氣壓時可能是空的）
   en: string;
-  label: string; // 顯示用：颱風 XXX / 熱帶性低氣壓 TD12
+  label: string; // 顯示用：強烈颱風 薔琵 / 熱帶性低氣壓 TD12
   past: TrackPoint[];
   forecast: TrackPoint[];
 };

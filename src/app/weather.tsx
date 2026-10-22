@@ -262,10 +262,23 @@ function TyphoonSection() {
                     now.pressure != null && `氣壓 ${now.pressure} hPa`,
                     now.dir && now.speed != null && `往${now.dir}移動，時速 ${now.speed} 公里`,
                     now.radius != null && `七級風暴風半徑 ${now.radius} 公里`,
+                    now.radius25 != null && `十級風暴風半徑 ${now.radius25} 公里`,
                   ]
                     .filter(Boolean)
                     .join('・')}
                 </Text>
+                {!!now.prediction && <Text style={{ color: t.text, fontSize: 13 }}>🧭 預測：{now.prediction}</Text>}
+                {c.forecast.length > 0 && (
+                  <View style={styles.chips}>
+                    {c.forecast
+                      .filter((p) => p.tau != null && p.tau % 24 === 0)
+                      .map((p) => (
+                        <Text key={p.time} style={[styles.area, { color: t.text, backgroundColor: t.iconBg }]}>
+                          {p.tau} 小時後：北緯 {p.lat.toFixed(1)}°、東經 {p.lon.toFixed(1)}°{p.wind != null ? `・${p.wind} m/s` : ''}
+                        </Text>
+                      ))}
+                  </View>
+                )}
                 {!!now.time && <Text style={{ color: t.faint, fontSize: 11 }}>{taipeiTime(now.time)} 分析</Text>}
               </View>
             );
