@@ -10,6 +10,7 @@ export type YouTubeVideo = {
 
 export type YouTubeResponse = {
   videos: YouTubeVideo[];
+  quakeLive?: string; // 「台灣地震監視」目前直播的影片 ID（天氣地震頁嵌入用）
   updatedAt: string | null;
   error?: string;
 };

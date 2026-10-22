@@ -20,12 +20,15 @@ import { taipeiTime } from '@/lib/prices-data';
 import { taipeiToday } from '@/lib/series';
 import { useStoredState } from '@/lib/storage';
 import { useTheme, type Theme } from '@/lib/theme';
+import type { YouTubeResponse } from '@/lib/youtube';
+import youtube from '../../public/data/youtube.json';
 
 export function generateMetadata() {
   return meta(PAGES.weather.title, PAGES.weather.description);
 }
 
-const LIVE_CHANNEL = 'UCa32OtZqhDqDqCHeWO477qg'; // YouTube「台灣地震監視」
+// YouTube「台灣地震監視」目前的直播（每天早上隨 YouTube 熱門一起更新）
+const LIVE_VIDEO = (youtube as YouTubeResponse).quakeLive || 'KyT4qSK8lJo';
 
 type Load<T> = { data?: T; error?: string; loading: boolean };
 
@@ -206,9 +209,11 @@ function QuakeSection() {
   const state = useApi<QuakeResponse>('/api/quakes', 60);
   return (
     <Card title="地震資訊" icon="🌏">
-      <LiveEmbed channelId={LIVE_CHANNEL} title="台灣地震監視" />
+      <LiveEmbed videoId={LIVE_VIDEO} title="台灣地震監視" />
       <Muted>
-        即時畫面來自 YouTube 頻道「台灣地震監視」，非本站製作。下方為中央氣象署地震報告，頁面開著時每分鐘自動更新。本頁不是地震預警，請以手機強震即時警報為準。
+        即時畫面來自 YouTube 頻道
+        <ExtLink href="https://www.youtube.com/channel/UCa32OtZqhDqDqCHeWO477qg">台灣地震監視</ExtLink>
+        ，版權屬原作者，本站僅透過 YouTube 官方播放器嵌入。下方為中央氣象署地震報告，頁面開著時每分鐘自動更新。本頁不是地震預警，請以手機強震即時警報為準。
       </Muted>
       <Status state={state} what="地震報告" />
       {state.data && state.data.quakes.length === 0 && <Text style={{ color: t.muted }}>最近沒有有感地震。</Text>}
