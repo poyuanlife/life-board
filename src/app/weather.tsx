@@ -52,8 +52,15 @@ function useApi<T extends { error?: string }>(path: string, every = 0) {
   useEffect(() => {
     load();
     if (!every) return;
-    const id = setInterval(load, every * 1000);
-    return () => clearInterval(id);
+    // 分頁在背景（或手機關螢幕）時不重抓，省 Cloudflare 額度；切回來時立刻補抓一次
+    const hidden = () => typeof document !== 'undefined' && document.visibilityState === 'hidden';
+    const id = setInterval(() => !hidden() && load(), every * 1000);
+    const onShow = () => !hidden() && load();
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onShow);
+    return () => {
+      clearInterval(id);
+      if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onShow);
+    };
   }, [load, every]);
   return state;
 }
