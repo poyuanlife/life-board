@@ -17,7 +17,10 @@ const latest = (weekly as WeeklyArticle[])[0];
 const SECTIONS: Record<Category, { title: string; hint: string }> = {
   fuel: { title: '⛽ 油價', hint: '中油牌價・每週一調整' },
   fx: { title: '💱 匯率', hint: '國際中間價，換匯請以銀行牌告為準・不計入溫度計' },
-  gold: { title: '💰 金價', hint: '國際金價換算（1 錢 = 3.75 公克），銀樓買賣價另計・不計入溫度計' },
+  gold: {
+    title: '💰 金價・國際金屬',
+    hint: '國際價格換算台幣：黃金 1 錢 = 3.75 公克（銀樓買賣價另計），銅與鐵礦砂為期貨價（非回收價）・不計入溫度計',
+  },
   metal: { title: '🔩 國際金屬', hint: '國際期貨價格換算台幣，不是回收價・不計入溫度計' },
   veg: { title: '🥬 蔬菜', hint: '農業部・台北一市場批發價（零售價約為 2～3 倍）' },
   fruit: { title: '🍎 水果', hint: '農業部・台北一市場批發價' },
@@ -48,8 +51,9 @@ export default function Home() {
   const columns = inner >= 1180 ? 4 : inner >= 860 ? 3 : inner >= 540 ? 2 : 1;
   const gap = 12;
 
-  const section = (key: Category) => {
-    const list = data.items.filter((i) => i.category === key);
+  // also：一起排在同一區的其他類別（例如金價和國際金屬）
+  const section = (key: Category, also: Category[] = []) => {
+    const list = data.items.filter((i) => i.category === key || also.includes(i.category));
     if (!list.length) return null;
     return <Section key={key} title={SECTIONS[key].title} hint={SECTIONS[key].hint} list={list} columns={columns} gap={gap} />;
   };
@@ -72,8 +76,7 @@ export default function Home() {
             <Text style={{ color: t.muted, fontSize: 12 }}>⚠️ 部分資料暫時抓不到：{data.errors.join('；')}</Text>
           )}
           {section('fuel')}
-          {section('gold')}
-          {section('metal')}
+          {section('gold', ['metal'])}
           {section('fx')}
 
           <PriceGauge items={data.items} />
