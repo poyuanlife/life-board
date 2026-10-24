@@ -8,7 +8,7 @@ export function PriceCard({ item }: { item: PriceItem }) {
   const t = useTheme();
   const trend = trendOf(item.changePct, item.threshold);
   // 匯率看到小數 2 位、金價取整數，其他 1 位
-  const digits = item.category === 'fx' ? 2 : item.category === 'gold' ? 0 : 1;
+  const digits = item.category === 'fx' ? 2 : item.category === 'gold' || item.category === 'metal' ? 0 : 1;
   const pct = item.changePct ?? 0;
   const kg = perKg(item, item.price); // 食物：主價格是台斤，旁邊補上公斤
 

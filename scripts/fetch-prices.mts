@@ -291,6 +291,39 @@ async function loadFx(): Promise<PriceItem[]> {
   return [...fx, gold];
 }
 
+// ---------- 國際金屬（Yahoo 財經期貨收盤價）----------
+const LB_PER_KG = 2.20462;
+
+/** Yahoo 財經每日收盤價（跳過沒有成交的日子） */
+async function yahooDaily(symbol: string): Promise<Point[]> {
+  const j = await getJson(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=6mo&interval=1d`);
+  const r = j?.chart?.result?.[0];
+  if (!r) throw new Error(`Yahoo ${symbol} 沒有資料`);
+  const offset = Number(r.meta?.gmtoffset ?? 0);
+  const closes: (number | null)[] = r.indicators?.quote?.[0]?.close ?? [];
+  return (r.timestamp as number[])
+    .map((t, i) => ({ date: new Date((t + offset) * 1000).toISOString().slice(0, 10), value: closes[i] }))
+    .filter((p): p is Point => p.value != null && Number.isFinite(p.value) && p.value > 0);
+}
+
+async function loadMetals(): Promise<PriceItem[]> {
+  const [usd, copper, iron] = await Promise.all([yahooDaily('TWD=X'), yahooDaily('HG=F'), yahooDaily('TIO=F')]);
+  if (!usd.length) throw new Error('抓不到美元匯率');
+  // 每一天用「當天或之前最近一天」的美元匯率換算
+  const rateOn = (date: string) => [...usd].reverse().find((p) => p.date <= date)?.value ?? usd[0].value;
+  const twd = (list: Point[], factor: number) => list.map((p) => ({ date: p.date, value: Math.round(p.value * factor * rateOn(p.date)) }));
+  return [
+    build(
+      { id: 'copper', name: '銅', icon: '🟠', category: 'metal', unit: '元/公斤', threshold: 2, note: 'COMEX 銅期貨換算，非回收價' },
+      twd(copper, LB_PER_KG) // 美元/磅 → 台幣/公斤
+    ),
+    build(
+      { id: 'ironore', name: '鐵礦砂', icon: '⛏️', category: 'metal', unit: '元/公噸', threshold: 2, note: '62% 鐵礦砂期貨換算，非廢鐵價' },
+      twd(iron, 1) // 美元/公噸 → 台幣/公噸
+    ),
+  ];
+}
+
 // ---------- 組合 ----------
 const SOURCES: [string, () => Promise<PriceItem | PriceItem[]>][] = [
   ['油價', loadFuel],
@@ -299,6 +332,7 @@ const SOURCES: [string, () => Promise<PriceItem | PriceItem[]>][] = [
   ['雞蛋', loadPoultry],
   ['毛豬', loadPork],
   ['匯率', loadFx],
+  ['國際金屬', loadMetals],
 ];
 
 async function main() {
