@@ -18,6 +18,7 @@ import {
   type PricesResponse,
 } from '../src/lib/series.ts';
 import { updateWeekly } from './weekly.mts';
+import { SITE_URL } from '../src/lib/site.ts';
 
 const WEEKS = 8;
 const DAYS = WEEKS * 7 + 7; // 多抓一週，算第一根 K 線的開盤
@@ -342,8 +343,26 @@ async function main() {
   const errors: string[] = [];
   results.forEach((r, i) => {
     if (r.status === 'fulfilled') items.push(...([] as PriceItem[]).concat(r.value));
-    else errors.push(`${SOURCES[i][0]}：${String(r.reason).slice(0, 120)}`);
+    else {
+      // 給網頁看的簡短說明；完整錯誤留在執行紀錄
+      const why = /fetch failed|timeout|abort|ECONN|ENOTFOUND/i.test(String(r.reason)) ? '連線失敗' : '沒有新資料';
+      errors.push(`${SOURCES[i][0]}：${why}`);
+      console.warn(`${SOURCES[i][0]} 詳細錯誤：${String(r.reason).slice(0, 300)}`);
+    }
   });
+
+  // 有資料源抓不到時，沿用網站上次發布的價格，不要讓整區消失
+  if (errors.length) {
+    try {
+      const prev: PricesResponse = await getJson(`${SITE_URL}/data/prices.json?t=${Date.now()}`);
+      const have = new Set(items.map((i) => i.id));
+      const kept = prev.items.filter((i) => !have.has(i.id));
+      items.push(...kept);
+      if (kept.length) errors.push(`以上暫時顯示前次資料（${kept.length} 項）`);
+    } catch {
+      // 拿不到舊資料就算了
+    }
+  }
 
   const data: PricesResponse = { items, errors, updatedAt: new Date().toISOString() };
   // 在 GitHub Actions 上用 ::warning:: / ::notice:: 格式，結果會直接顯示在執行頁面
