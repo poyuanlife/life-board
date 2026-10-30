@@ -81,6 +81,26 @@ export function intensityRank(s: string) {
   return n * 2 + (m[2] === '強' ? 1 : 0);
 }
 
+/** 地震震度的顏色：越大越紅，5 弱以上用紫色 */
+export function intensityColor(level: string, t: { up: string; flat: string; down: string }) {
+  const r = intensityRank(level);
+  if (r >= 10) return '#7b1fa2'; // 5弱以上
+  if (r >= 8) return t.up; // 4級
+  if (r >= 6) return '#f57c00'; // 3級
+  if (r >= 4) return t.flat; // 2級
+  return t.down;
+}
+
+/** 預報時段名稱：2026-10-22 18:00:00 → 今天晚上 */
+export function periodLabel(p: Period, today: string) {
+  const date = p.start.slice(0, 10);
+  const hour = Number(p.start.slice(11, 13));
+  const tomorrow = new Date(Date.parse(today) + 86400000).toISOString().slice(0, 10);
+  const day = date === today ? '今天' : date === tomorrow ? '明天' : `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`;
+  const part = hour >= 18 ? '晚上' : hour >= 12 ? '下午' : hour >= 6 ? '白天' : '凌晨';
+  return `${day}${part}`;
+}
+
 // 天氣文字 → 圖示
 export function wxIcon(wx: string) {
   if (wx.includes('雪')) return '🌨️';

@@ -1,13 +1,17 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Link } from 'expo-router';
 import { BargainCard } from '@/components/BargainCard';
+import { LayoutEditor } from '@/components/LayoutEditor';
+import { QuakeMini, TyphoonMini, WeatherMini } from '@/components/MiniWidgets';
 import { PriceCard } from '@/components/PriceCard';
 import { PriceGauge } from '@/components/PriceGauge';
 import { SiteLayout } from '@/components/SiteLayout';
+import { DEFAULT_LAYOUT, flatOrder, normalize, type Layout, type WidgetId } from '@/lib/layout';
 import { meta, PAGES } from '@/lib/meta';
 import { PRICES, taipeiTime } from '@/lib/prices-data';
 import type { Category, PriceItem } from '@/lib/series';
+import { useStoredState } from '@/lib/storage';
 import { useTheme } from '@/lib/theme';
 import { weekRange, type WeeklyArticle } from '@/lib/weekly';
 import weekly from '@/content/weekly.json';
@@ -28,6 +32,10 @@ const SECTIONS: Record<Category, { title: string; hint: string }> = {
   meat: { title: '🥩 肉品・雞蛋', hint: '農業部・產地/拍賣價' },
 };
 
+// 電腦版左側欄的寬度；內容寬度不夠放兩欄時（手機、平板直向）改成單欄
+const SIDE_WIDTH = 320;
+const TWO_COLUMN_MIN = 900;
+
 /** 台灣時間的日期，例如 2026/10/21（三） */
 function dateText(ms: number) {
   const d = new Date(ms + 8 * 3600000);
@@ -47,64 +55,109 @@ export default function Home() {
   const [today, setToday] = useState(() => dateText(Date.parse(data.updatedAt)));
   useEffect(() => setToday(dateText(Date.now())), []);
 
-  // 依內容寬度決定欄數（手機 1 欄 → 電腦最多 4 欄）
-  const columns = inner >= 1180 ? 4 : inner >= 860 ? 3 : inner >= 540 ? 2 : 1;
+  // 每個人自己的版面（存在瀏覽器）；第一次來或設定壞掉就用預設
+  const [stored, setStored] = useStoredState<Layout>('home-layout', DEFAULT_LAYOUT);
+  const layout = normalize(stored);
+  const [editing, setEditing] = useState(false);
+
+  const wide = inner >= TWO_COLUMN_MIN && layout.side.length > 0;
+  const mainWidth = wide ? inner - SIDE_WIDTH - 20 : inner;
+  // 依主要欄寬度決定物價卡片欄數（手機 1 欄 → 電腦最多 4 欄）
+  const columns = mainWidth >= 1180 ? 4 : mainWidth >= 820 ? 3 : mainWidth >= 520 ? 2 : 1;
   const gap = 12;
 
-  // also：一起排在同一區的其他類別（例如金價和國際金屬）
   const section = (key: Category, also: Category[] = []) => {
     const list = data.items.filter((i) => i.category === key || also.includes(i.category));
     if (!list.length) return null;
-    return <Section key={key} title={SECTIONS[key].title} hint={SECTIONS[key].hint} list={list} columns={columns} gap={gap} />;
+    return <Section title={SECTIONS[key].title} hint={SECTIONS[key].hint} list={list} columns={columns} gap={gap} />;
   };
 
+  const widget = (id: WidgetId): ReactNode => {
+    switch (id) {
+      case 'weather':
+        return <WeatherMini />;
+      case 'quakes':
+        return <QuakeMini />;
+      case 'typhoon':
+        return <TyphoonMini />;
+      case 'fuel':
+      case 'fx':
+      case 'veg':
+      case 'fruit':
+      case 'fish':
+      case 'meat':
+        return section(id);
+      case 'gold':
+        return section('gold', ['metal']);
+      case 'gauge':
+        return <PriceGauge items={data.items} />;
+      case 'bargain':
+        return <BargainCard items={data.items} />;
+      case 'weekly':
+        return latest ? (
+          <Link href={`/weekly/${latest.week}`} asChild>
+            <Pressable style={StyleSheet.flatten([styles.teaser, { backgroundColor: t.card, borderColor: t.border }])}>
+              <Text style={{ fontSize: 22 }}>📝</Text>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={{ color: t.faint, fontSize: 12 }}>每週物價觀察・{weekRange(latest)}</Text>
+                <Text style={{ color: t.text, fontSize: 15, fontWeight: '700' }}>{latest.title}</Text>
+              </View>
+              <Text style={{ color: t.accent, fontSize: 14 }}>閱讀 →</Text>
+            </Pressable>
+          </Link>
+        ) : null;
+    }
+  };
+
+  // 用 Fragment 包，區塊沒內容時（例如沒有颱風）不會多出空白
+  const column = (ids: WidgetId[]) => ids.map((id) => <Fragment key={id}>{widget(id)}</Fragment>);
+
   return (
-    <SiteLayout
-      title={PAGES.home.title}
-      description={PAGES.home.description}
-      onWidth={setInner}>
+    <SiteLayout title={PAGES.home.title} description={PAGES.home.description} onWidth={setInner}>
       <View style={styles.header}>
-        <Text style={[styles.h1, { color: t.text }]} role="heading" aria-level={1}>
-          今日生活物價
-        </Text>
-        <Text style={{ color: t.muted }}>{today}</Text>
+        <View style={{ flex: 1, gap: 4 }}>
+          <Text style={[styles.h1, { color: t.text }]} role="heading" aria-level={1}>
+            今日生活物價
+          </Text>
+          <Text style={{ color: t.muted }}>{today}</Text>
+        </View>
+        {!editing && (
+          <Pressable
+            onPress={() => setEditing(true)}
+            accessibilityRole="button"
+            style={[styles.editBtn, { borderColor: t.border, backgroundColor: t.card }]}>
+            <Text style={{ color: t.text, fontSize: 14 }}>⚙️ 自訂版面</Text>
+          </Pressable>
+        )}
       </View>
 
-      {(
+      {editing ? (
+        <LayoutEditor
+          layout={layout}
+          wide={inner >= TWO_COLUMN_MIN}
+          onChange={setStored}
+          onReset={() => setStored(DEFAULT_LAYOUT)}
+          onDone={() => setEditing(false)}
+        />
+      ) : (
         <>
           {data.errors.length > 0 && (
             <Text style={{ color: t.muted, fontSize: 12 }}>⚠️ 部分資料暫時抓不到：{data.errors.join('；')}</Text>
           )}
-          {section('fuel')}
-          {section('gold', ['metal'])}
-          {section('fx')}
-
-          <PriceGauge items={data.items} />
-          {latest && (
-            <Link href={`/weekly/${latest.week}`} asChild>
-              <Pressable style={StyleSheet.flatten([styles.teaser, { backgroundColor: t.card, borderColor: t.border }])}>
-                <Text style={{ fontSize: 22 }}>📝</Text>
-                <View style={{ flex: 1, gap: 2 }}>
-                  <Text style={{ color: t.faint, fontSize: 12 }}>每週物價觀察・{weekRange(latest)}</Text>
-                  <Text style={{ color: t.text, fontSize: 15, fontWeight: '700' }}>{latest.title}</Text>
-                </View>
-                <Text style={{ color: t.accent, fontSize: 14 }}>閱讀 →</Text>
-              </Pressable>
-            </Link>
+          {wide ? (
+            <View style={styles.twoCols}>
+              <View style={[styles.col, { width: SIDE_WIDTH }]}>{column(layout.side)}</View>
+              <View style={[styles.col, { flex: 1, minWidth: 0 }]}>{column(layout.main)}</View>
+            </View>
+          ) : (
+            <View style={styles.col}>{column(flatOrder(layout))}</View>
           )}
-
-          <BargainCard items={data.items} />
-
-          {section('veg')}
-          {section('fruit')}
-          {section('fish')}
-          {section('meat')}
 
           <Text style={[styles.footnote, { color: t.faint }]}>
             單位：食物價格以台斤（600 公克）為主，旁邊附上每公斤價格。{'\n'}
             燈號：🔴 漲・🟡 持平・🟢 跌（蔬果、魚貨 ±5%、肉蛋 ±3%、匯率與金價 ±1%、國際金屬 ±2% 以內算持平）{'\n'}
             K 線：每根代表一週，開盤 = 上週收盤，紅 = 收盤比開盤高，綠 = 比開盤低。點或滑過 K 棒可看明細。{'\n'}
-            資料更新：{taipeiTime(data.updatedAt)}（每天早上自動更新）
+            資料更新：{taipeiTime(data.updatedAt)}（每天早上自動更新）・按右上「⚙️ 自訂版面」可調整區塊順序
           </Text>
         </>
       )}
@@ -146,9 +199,12 @@ function Section({
 }
 
 const styles = StyleSheet.create({
-  header: { gap: 4 },
+  header: { flexDirection: 'row', alignItems: 'flex-end', flexWrap: 'wrap', gap: 10 },
   h1: { fontSize: 28, fontWeight: '800' },
   h2: { fontSize: 19, fontWeight: '700' },
+  editBtn: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, minHeight: 44, justifyContent: 'center' },
+  twoCols: { flexDirection: 'row', gap: 20, alignItems: 'flex-start' },
+  col: { gap: 20 },
   section: { gap: 10 },
   sectionHead: { flexDirection: 'row', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },

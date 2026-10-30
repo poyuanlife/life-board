@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Link } from 'expo-router';
+import { ApiStatus } from '@/components/ApiStatus';
 import { Card } from '@/components/Card';
 import { ExtLink } from '@/components/ExtLink';
 import { LiveEmbed } from '@/components/LiveEmbed';
@@ -8,19 +9,20 @@ import { H1, Muted } from '@/components/Prose';
 import { SiteLayout } from '@/components/SiteLayout';
 import { TyphoonMap } from '@/components/TyphoonMap';
 import {
-  intensityRank,
+  intensityColor,
+  periodLabel,
   wxIcon,
-  type Period,
   type Quake,
   type QuakeResponse,
   type TyphoonResponse,
   type WeatherResponse,
 } from '@/lib/cwa';
 import { meta, PAGES } from '@/lib/meta';
-import { PRICES, taipeiTime } from '@/lib/prices-data';
+import { taipeiTime } from '@/lib/prices-data';
 import { taipeiToday } from '@/lib/series';
 import { useStoredState } from '@/lib/storage';
-import { useTheme, type Theme } from '@/lib/theme';
+import { useTheme } from '@/lib/theme';
+import { useApi } from '@/lib/useApi';
 import type { YouTubeResponse } from '@/lib/youtube';
 import youtube from '../../public/data/youtube.json';
 
@@ -31,61 +33,7 @@ export function generateMetadata() {
 // YouTube「台灣地震監視」目前的直播（每天早上隨 YouTube 熱門一起更新）
 const LIVE_VIDEO = (youtube as YouTubeResponse).quakeLive || 'KyT4qSK8lJo';
 
-type Load<T> = { data?: T; error?: string; loading: boolean };
-
-// 每次部署都不一樣的版本號（建置時間），加在 API 網址上，網站更新後就不會拿到舊程式的快取
-const VERSION = encodeURIComponent(PRICES.updatedAt);
-
-/** 打開頁面時向本站的 /api 抓最新資料；every 秒數 > 0 時會定時重抓 */
-function useApi<T extends { error?: string }>(path: string, every = 0) {
-  const [state, setState] = useState<Load<T>>({ loading: true });
-  const load = useCallback(async () => {
-    try {
-      const res = await fetch(`${path}?v=${VERSION}`);
-      const body = (await res.json()) as T;
-      if (!res.ok || body.error) throw new Error(body.error ?? `HTTP ${res.status}`);
-      setState({ data: body, loading: false });
-    } catch (e) {
-      // 重抓失敗時保留舊資料
-      setState((s) => ({ data: s.data, loading: false, error: s.data ? undefined : String(e instanceof Error ? e.message : e) }));
-    }
-  }, [path]);
-  useEffect(() => {
-    load();
-    if (!every) return;
-    // 分頁在背景（或手機關螢幕）時不重抓，省 Cloudflare 額度；切回來時立刻補抓一次
-    const hidden = () => typeof document !== 'undefined' && document.visibilityState === 'hidden';
-    const id = setInterval(() => !hidden() && load(), every * 1000);
-    const onShow = () => !hidden() && load();
-    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onShow);
-    return () => {
-      clearInterval(id);
-      if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onShow);
-    };
-  }, [load, every]);
-  return state;
-}
-
-function Status({ state, what }: { state: Load<unknown>; what: string }) {
-  const t = useTheme();
-  if (state.loading) return <ActivityIndicator color={t.accent} style={{ paddingVertical: 20 }} />;
-  if (state.error)
-    return <Text style={{ color: t.muted, fontSize: 14 }}>暫時無法取得{what}，請稍後重新整理。（{state.error}）</Text>;
-  return null;
-}
-
 // ---------- 天氣 ----------
-
-/** 2026-10-22 18:00:00 → 今天晚上 */
-function periodLabel(p: Period) {
-  const date = p.start.slice(0, 10);
-  const hour = Number(p.start.slice(11, 13));
-  const today = taipeiToday();
-  const tomorrow = new Date(Date.parse(today) + 86400000).toISOString().slice(0, 10);
-  const day = date === today ? '今天' : date === tomorrow ? '明天' : `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`;
-  const part = hour >= 18 ? '晚上' : hour >= 12 ? '下午' : hour >= 6 ? '白天' : '凌晨';
-  return `${day}${part}`;
-}
 
 function WeatherSection() {
   const t = useTheme();
@@ -96,7 +44,7 @@ function WeatherSection() {
 
   return (
     <Card title="天氣溫度" icon="🌡️">
-      <Status state={state} what="天氣資料" />
+      <ApiStatus state={state} what="天氣資料" />
       {c && (
         <>
           <View style={styles.chips}>
@@ -138,7 +86,7 @@ function WeatherSection() {
           <View style={styles.periods}>
             {c.periods.slice(0, 3).map((p) => (
               <View key={p.start} style={[styles.period, { borderColor: t.border }]}>
-                <Text style={{ color: t.muted, fontSize: 12 }}>{periodLabel(p)}</Text>
+                <Text style={{ color: t.muted, fontSize: 12 }}>{periodLabel(p, taipeiToday())}</Text>
                 <Text style={{ fontSize: 28 }}>{wxIcon(p.wx)}</Text>
                 <Text style={{ color: t.text, fontSize: 13, textAlign: 'center' }} numberOfLines={2}>
                   {p.wx}
@@ -161,15 +109,6 @@ function WeatherSection() {
 }
 
 // ---------- 地震 ----------
-
-function intensityColor(level: string, t: Theme) {
-  const r = intensityRank(level);
-  if (r >= 10) return '#7b1fa2'; // 5弱以上
-  if (r >= 8) return t.up; // 4級
-  if (r >= 6) return '#f57c00'; // 3級
-  if (r >= 4) return t.flat; // 2級
-  return t.down;
-}
 
 function QuakeRow({ q }: { q: Quake }) {
   const t = useTheme();
@@ -226,7 +165,7 @@ function QuakeSection() {
         <ExtLink href="https://www.youtube.com/channel/UCa32OtZqhDqDqCHeWO477qg">台灣地震監視</ExtLink>
         ，版權屬原作者，本站僅透過 YouTube 官方播放器嵌入。下方為中央氣象署地震報告，頁面開著時每 4 分鐘自動更新。本頁不是地震預警，請以手機強震即時警報為準。
       </Muted>
-      <Status state={state} what="地震報告" />
+      <ApiStatus state={state} what="地震報告" />
       {state.data && state.data.quakes.length === 0 && <Text style={{ color: t.muted }}>最近沒有有感地震。</Text>}
       <View style={{ gap: 8 }}>
         {state.data?.quakes.map((q) => <QuakeRow key={q.no + q.time} q={q} />)}
@@ -244,7 +183,7 @@ function TyphoonSection() {
   const list = state.data?.cyclones ?? [];
   return (
     <Card title="颱風動態" icon="🌀">
-      <Status state={state} what="颱風資料" />
+      <ApiStatus state={state} what="颱風資料" />
       {state.data && list.length === 0 && (
         <View style={[styles.now, { backgroundColor: t.iconBg }]}>
           <Text style={{ fontSize: 28 }}>😌</Text>
