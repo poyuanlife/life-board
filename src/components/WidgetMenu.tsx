@@ -1,6 +1,6 @@
 // 首頁每個區塊右上角的「⋯」：不用進編輯畫面，直接調整這一個區塊
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { canMove, move, switchColumn, toggleHidden, toTop, WIDGETS, type Layout, type WidgetId } from '@/lib/layout';
+import { DEVICE_NOTE, canMove, move, switchColumn, toggleHidden, toTop, WIDGETS, type Layout, type WidgetId } from '@/lib/layout';
 import { useTheme } from '@/lib/theme';
 
 /** 區塊標題旁的小按鈕 */
@@ -154,6 +154,7 @@ export function WidgetMenu({ id, layout, wide, onChange, onHide, onCustomize, on
               <Text style={{ color: t.text, fontSize: 16 }}>{it.label}</Text>
             </Pressable>
           ))}
+          <Text style={{ color: t.faint, fontSize: 12, paddingHorizontal: 6, paddingTop: 4 }}>{DEVICE_NOTE}</Text>
           <Pressable onPress={onClose} style={[styles.cancel, { borderColor: t.border }]} accessibilityRole="button">
             <Text style={{ color: t.muted, fontSize: 16 }}>取消</Text>
           </Pressable>

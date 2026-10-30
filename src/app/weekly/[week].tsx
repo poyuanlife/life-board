@@ -3,6 +3,7 @@ import { Link, useLocalSearchParams } from 'expo-router';
 import { H1, H2, Muted, P } from '@/components/Prose';
 import { SiteLayout } from '@/components/SiteLayout';
 import { meta } from '@/lib/meta';
+import { taipeiTime } from '@/lib/prices-data';
 import { useTheme } from '@/lib/theme';
 import { weekRange, type WeeklyArticle } from '@/lib/weekly';
 import weekly from '@/content/weekly.json';
@@ -48,7 +49,7 @@ export default function WeeklyArticlePage() {
       <View style={{ gap: 8 }}>
         <Muted>
           {weekRange(a)}
-          {a.final ? '' : '・本週更新中'}・最後更新 {new Date(a.updatedAt).toLocaleDateString('zh-TW')}
+          {a.final ? '' : '・本週更新中'}・最後更新 {taipeiTime(a.updatedAt).slice(0, 10)}
         </Muted>
         <H1>{a.title}</H1>
       </View>

@@ -56,6 +56,12 @@ export function SiteLayout({ title, description, maxWidth = 1320, children, onWi
                   </Link>
                 );
               })}
+              <Link
+                href={{ pathname: '/', params: { edit: '1' } }}
+                accessibilityLabel="自訂首頁版面"
+                style={[styles.custom, { color: t.text, borderColor: t.border, backgroundColor: t.card }]}>
+                ⚙️ 自訂
+              </Link>
             </View>
           </View>
         </View>
@@ -105,7 +111,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   brand: { fontSize: 17, fontWeight: '800' },
-  nav: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 16, rowGap: 4 },
+  // maxWidth 讓手機上導覽列換行，不會超出螢幕
+  nav: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 16, rowGap: 4, maxWidth: '100%' },
+  // 右上角的自訂按鈕（每一頁都有，按了回首頁的編輯畫面）
+  custom: { fontSize: 14, borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4 },
   navLink: { fontSize: 14, paddingVertical: 4, borderBottomWidth: 2, borderBottomColor: 'transparent' },
   inner: { width: '100%', paddingHorizontal: 16, paddingVertical: 20, gap: 20, flexGrow: 1 },
   footer: { width: '100%', borderTopWidth: 1, alignItems: 'center', marginTop: 20 },

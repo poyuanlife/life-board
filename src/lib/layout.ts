@@ -14,7 +14,9 @@ export type WidgetId =
   | 'veg'
   | 'fruit'
   | 'fish'
-  | 'meat';
+  | 'meat'
+  | 'calories'
+  | 'youtube';
 
 export const WIDGETS: Record<WidgetId, { icon: string; label: string }> = {
   weather: { icon: '🌡️', label: '天氣' },
@@ -30,13 +32,18 @@ export const WIDGETS: Record<WidgetId, { icon: string; label: string }> = {
   fruit: { icon: '🍎', label: '水果' },
   fish: { icon: '🐟', label: '魚貨海鮮' },
   meat: { icon: '🥩', label: '肉品・雞蛋' },
+  calories: { icon: '🍱', label: '今天的熱量（熱量計算）' },
+  youtube: { icon: '📺', label: 'YouTube 熱門前 3 名' },
 };
+
+/** 每台裝置各自記住版面；在畫面上提醒使用者 */
+export const DEVICE_NOTE = '版面設定只存在這台裝置的瀏覽器，手機和電腦要各自設定。';
 
 export type Layout = { side: WidgetId[]; main: WidgetId[]; hidden: WidgetId[] };
 
 export const DEFAULT_LAYOUT: Layout = {
   side: ['weather', 'quakes', 'typhoon'],
-  main: ['fuel', 'gold', 'fx', 'gauge', 'weekly', 'bargain', 'veg', 'fruit', 'fish', 'meat'],
+  main: ['fuel', 'gold', 'fx', 'gauge', 'weekly', 'bargain', 'veg', 'fruit', 'fish', 'meat', 'calories', 'youtube'],
   hidden: [],
 };
 
@@ -179,7 +186,7 @@ export const PRESETS: {
     hint: '油價、天氣優先',
     layout: {
       side: ['weather', 'typhoon', 'quakes'],
-      main: ['fuel', 'fx', 'gold', 'gauge', 'weekly', 'bargain', 'veg', 'fruit', 'fish', 'meat'],
+      main: ['fuel', 'fx', 'gold', 'gauge', 'weekly', 'bargain', 'veg', 'fruit', 'fish', 'meat', 'calories', 'youtube'],
       hidden: [],
     },
   },
@@ -190,7 +197,7 @@ export const PRESETS: {
     hint: '划算推薦、蔬果肉魚優先',
     layout: {
       side: ['weather', 'quakes', 'typhoon'],
-      main: ['bargain', 'veg', 'fruit', 'meat', 'fish', 'gauge', 'weekly', 'fuel', 'gold', 'fx'],
+      main: ['bargain', 'veg', 'fruit', 'meat', 'fish', 'gauge', 'weekly', 'fuel', 'gold', 'fx', 'calories', 'youtube'],
       hidden: [],
     },
   },
@@ -201,7 +208,7 @@ export const PRESETS: {
     hint: '金價、匯率優先',
     layout: {
       side: ['weather', 'quakes', 'typhoon'],
-      main: ['gold', 'fx', 'fuel', 'gauge', 'weekly', 'bargain', 'veg', 'fruit', 'fish', 'meat'],
+      main: ['gold', 'fx', 'fuel', 'gauge', 'weekly', 'bargain', 'veg', 'fruit', 'fish', 'meat', 'calories', 'youtube'],
       hidden: [],
     },
   },

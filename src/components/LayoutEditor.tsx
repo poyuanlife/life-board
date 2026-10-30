@@ -13,6 +13,7 @@ import {
   type Column,
   type Layout,
   type WidgetId,
+  DEVICE_NOTE,
 } from '@/lib/layout';
 import { useTheme } from '@/lib/theme';
 
@@ -355,12 +356,17 @@ export function LayoutEditor({ layout, wide, onChange, onDone }: Props) {
           <Text style={{ color: t.text, fontSize: 18, fontWeight: '800' }}>⚙️ 自訂版面</Text>
           <Text style={{ color: t.muted, fontSize: 13, lineHeight: 19 }}>
             按住左邊的 ≡ 拖曳排序{wide ? '，可以拖到左側欄或主要欄' : ''}；⤒
-            是直接移到最上面。設定只存在這台裝置的瀏覽器。
+            是直接移到最上面。
           </Text>
         </View>
         <Pressable onPress={onDone} style={[styles.action, { borderColor: t.accent, backgroundColor: t.accent }]}>
           <Text style={{ color: '#fff', fontWeight: '700' }}>完成</Text>
         </Pressable>
+      </View>
+
+      <View style={[styles.note, { borderColor: t.flat, backgroundColor: t.card }]}>
+        <Text style={{ fontSize: 18 }}>📱💻</Text>
+        <Text style={{ color: t.text, fontSize: 14, flex: 1, lineHeight: 20 }}>{DEVICE_NOTE}</Text>
       </View>
 
       <View style={{ gap: 6 }}>
@@ -431,6 +437,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   doneBottom: { alignItems: 'center' },
+  note: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: 12, padding: 12 },
   presets: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   preset: {
     flexGrow: 1,

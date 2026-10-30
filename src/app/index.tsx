@@ -1,14 +1,14 @@
 import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, router, useLocalSearchParams } from 'expo-router';
 import { BargainCard } from '@/components/BargainCard';
 import { LayoutEditor } from '@/components/LayoutEditor';
 import { MenuButton, WidgetMenu } from '@/components/WidgetMenu';
-import { QuakeMini, TyphoonMini, WeatherMini } from '@/components/MiniWidgets';
+import { CaloriesMini, QuakeMini, TyphoonMini, WeatherMini, YouTubeMini } from '@/components/MiniWidgets';
 import { PriceCard } from '@/components/PriceCard';
 import { PriceGauge } from '@/components/PriceGauge';
 import { SiteLayout } from '@/components/SiteLayout';
-import { DEFAULT_LAYOUT, flatOrder, normalize, WIDGETS, type Layout, type WidgetId } from '@/lib/layout';
+import { DEFAULT_LAYOUT, DEVICE_NOTE, flatOrder, normalize, WIDGETS, type Layout, type WidgetId } from '@/lib/layout';
 import { meta, PAGES } from '@/lib/meta';
 import { PRICES, taipeiTime } from '@/lib/prices-data';
 import type { Category, PriceItem } from '@/lib/series';
@@ -69,6 +69,15 @@ export default function Home() {
   const [stored, setStored] = useStoredState<Layout>('home-layout', DEFAULT_LAYOUT);
   const layout = normalize(stored);
   const [editing, setEditing] = useState(false);
+  // 導覽列右上角的「⚙️ 自訂」會連到 /?edit=1
+  const params = useLocalSearchParams<{ edit?: string }>();
+  useEffect(() => {
+    if (params.edit === '1') setEditing(true);
+  }, [params.edit]);
+  const finishEditing = () => {
+    setEditing(false);
+    if (params.edit) router.replace('/');
+  };
   const [menuFor, setMenuFor] = useState<WidgetId | null>(null);
   // 剛隱藏區塊時，畫面下方出現「復原」幾秒鐘
   const [undo, setUndo] = useState<{ before: Layout; label: string } | null>(null);
@@ -108,6 +117,10 @@ export default function Home() {
         return <QuakeMini menu={menu} />;
       case 'typhoon':
         return <TyphoonMini menu={menu} />;
+      case 'calories':
+        return <CaloriesMini menu={menu} />;
+      case 'youtube':
+        return <YouTubeMini menu={menu} />;
       case 'fuel':
       case 'fx':
       case 'veg':
@@ -153,14 +166,6 @@ export default function Home() {
           </Text>
           <Text style={{ color: t.muted }}>{today}</Text>
         </View>
-        {!editing && (
-          <Pressable
-            onPress={() => setEditing(true)}
-            accessibilityRole="button"
-            style={[styles.editBtn, { borderColor: t.border, backgroundColor: t.card }]}>
-            <Text style={{ color: t.text, fontSize: 14 }}>⚙️ 自訂版面</Text>
-          </Pressable>
-        )}
       </View>
 
       {editing ? (
@@ -168,7 +173,7 @@ export default function Home() {
           layout={layout}
           wide={inner >= TWO_COLUMN_MIN}
           onChange={setStored}
-          onDone={() => setEditing(false)}
+          onDone={finishEditing}
         />
       ) : (
         <>
@@ -190,7 +195,8 @@ export default function Home() {
             線：每根代表一週，開盤 = 上週收盤，紅 = 收盤比開盤高，綠 = 比開盤低。點或滑過 K 棒可看明細。
             {'\n'}
             資料更新：{taipeiTime(data.updatedAt)}
-            （每天早上自動更新）・按區塊右上的 ⋯ 或「⚙️ 自訂版面」可調整版面
+            （每天早上自動更新）{'\n'}
+            自訂版面：按區塊右上的 ⋯，或畫面最上方的「⚙️ 自訂」。{DEVICE_NOTE}
           </Text>
         </>
       )}
@@ -276,13 +282,6 @@ const styles = StyleSheet.create({
   },
   h1: { fontSize: 28, fontWeight: '800' },
   h2: { fontSize: 19, fontWeight: '700' },
-  editBtn: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    minHeight: 44,
-    justifyContent: 'center',
-  },
   twoCols: { flexDirection: 'row', gap: 20, alignItems: 'flex-start' },
   col: { gap: 20 },
   section: { gap: 10 },
