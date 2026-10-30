@@ -10,7 +10,7 @@ export type Candle = {
   low: number;
 };
 
-export type Category = 'fuel' | 'oil' | 'fx' | 'gold' | 'metal' | 'veg' | 'fruit' | 'fish' | 'meat';
+export type Category = 'fuel' | 'oil' | 'fx' | 'gold' | 'metal' | 'stock' | 'veg' | 'fruit' | 'fish' | 'meat';
 
 export type PriceItem = {
   id: string;

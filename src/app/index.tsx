@@ -21,6 +21,7 @@ const latest = (weekly as WeeklyArticle[])[0];
 
 const SECTIONS: Record<Category, { title: string; hint: string }> = {
   fuel: { title: '⛽ 油價', hint: '中油牌價每週一調整・國際原油為期貨價（美元/桶），不計入溫度計' },
+  stock: { title: '📈 股市指數', hint: '前一交易日收盤・每天早上更新・僅供參考，不構成投資建議・不計入溫度計' },
   oil: { title: '🛢️ 國際原油', hint: '國際期貨價（美元/桶）・不計入溫度計' },
   fx: {
     title: '💱 匯率',
@@ -123,6 +124,7 @@ export default function Home() {
       case 'youtube':
         return <YouTubeMini menu={menu} />;
       case 'fx':
+      case 'stock':
       case 'veg':
       case 'fruit':
       case 'fish':
@@ -193,7 +195,7 @@ export default function Home() {
 
           <Text style={[styles.footnote, { color: t.faint }]}>
             單位：食物價格以台斤（600 公克）為主，旁邊附上每公斤價格。{'\n'}
-            燈號：🔴 漲・🟡 持平・🟢 跌（蔬果、魚貨 ±5%、肉蛋 ±3%、匯率與金價 ±1%、國際金屬與原油 ±2% 以內算持平）{'\n'}K
+            燈號：🔴 漲・🟡 持平・🟢 跌（蔬果、魚貨 ±5%、肉蛋 ±3%、匯率與金價 ±1%、國際金屬與原油 ±2%、股市指數 ±1% 以內算持平）{'\n'}K
             線：每根代表一週，開盤 = 上週收盤，紅 = 收盤比開盤高，綠 = 比開盤低。點或滑過 K 棒可看明細。
             {'\n'}
             資料更新：{taipeiTime(data.updatedAt)}

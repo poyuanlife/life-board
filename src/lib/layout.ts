@@ -8,6 +8,7 @@ export type WidgetId =
   | 'fuel'
   | 'gold'
   | 'fx'
+  | 'stock'
   | 'gauge'
   | 'weekly'
   | 'bargain'
@@ -25,6 +26,7 @@ export const WIDGETS: Record<WidgetId, { icon: string; label: string }> = {
   fuel: { icon: '⛽', label: '油價・國際原油' },
   gold: { icon: '💰', label: '金價・國際金屬' },
   fx: { icon: '💱', label: '匯率' },
+  stock: { icon: '📈', label: '股市指數' },
   gauge: { icon: '🌡️', label: '物價溫度計' },
   weekly: { icon: '📝', label: '每週物價觀察' },
   bargain: { icon: '🛒', label: '本週划算推薦' },
@@ -43,7 +45,7 @@ export type Layout = { side: WidgetId[]; main: WidgetId[]; hidden: WidgetId[] };
 
 export const DEFAULT_LAYOUT: Layout = {
   side: ['weather', 'quakes', 'typhoon'],
-  main: ['fuel', 'gold', 'fx', 'gauge', 'weekly', 'bargain', 'veg', 'fruit', 'fish', 'meat', 'calories', 'youtube'],
+  main: ['fuel', 'gold', 'fx', 'stock', 'gauge', 'weekly', 'bargain', 'veg', 'fruit', 'fish', 'meat', 'calories', 'youtube'],
   hidden: [],
 };
 
@@ -186,7 +188,7 @@ export const PRESETS: {
     hint: '油價、天氣優先',
     layout: {
       side: ['weather', 'typhoon', 'quakes'],
-      main: ['fuel', 'fx', 'gold', 'gauge', 'weekly', 'bargain', 'veg', 'fruit', 'fish', 'meat', 'calories', 'youtube'],
+      main: ['fuel', 'fx', 'stock', 'gold', 'gauge', 'weekly', 'bargain', 'veg', 'fruit', 'fish', 'meat', 'calories', 'youtube'],
       hidden: [],
     },
   },
@@ -197,7 +199,7 @@ export const PRESETS: {
     hint: '划算推薦、蔬果肉魚優先',
     layout: {
       side: ['weather', 'quakes', 'typhoon'],
-      main: ['bargain', 'veg', 'fruit', 'meat', 'fish', 'gauge', 'weekly', 'fuel', 'gold', 'fx', 'calories', 'youtube'],
+      main: ['bargain', 'veg', 'fruit', 'meat', 'fish', 'gauge', 'weekly', 'fuel', 'gold', 'fx', 'stock', 'calories', 'youtube'],
       hidden: [],
     },
   },
@@ -205,10 +207,10 @@ export const PRESETS: {
     key: 'money',
     icon: '💰',
     label: '理財族',
-    hint: '金價、匯率優先',
+    hint: '股市、金價、匯率優先',
     layout: {
       side: ['weather', 'quakes', 'typhoon'],
-      main: ['gold', 'fx', 'fuel', 'gauge', 'weekly', 'bargain', 'veg', 'fruit', 'fish', 'meat', 'calories', 'youtube'],
+      main: ['stock', 'gold', 'fx', 'fuel', 'gauge', 'weekly', 'bargain', 'veg', 'fruit', 'fish', 'meat', 'calories', 'youtube'],
       hidden: [],
     },
   },

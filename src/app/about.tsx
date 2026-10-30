@@ -46,6 +46,11 @@ export default function About() {
           之縣市 36 小時預報、即時觀測、有感地震報告與颱風路徑，颱風路徑潛勢圖取自氣象署官網；地震即時畫面嵌入自 YouTube 頻道「台灣地震監視」。
         </Li>
         <Li>
+          股市指數：台股加權指數取自<ExtLink href="https://www.twse.com.tw/">臺灣證券交易所</ExtLink>、櫃買指數取自
+          <ExtLink href="https://www.tpex.org.tw/">證券櫃檯買賣中心</ExtLink>
+          ；道瓊、S&amp;P 500、那斯達克、費城半導體、日經 225 為 Yahoo 財經提供之收盤指數。皆為前一交易日收盤，僅供參考，不構成投資建議。
+        </Li>
+        <Li>
           國際原油：Yahoo 財經提供之布蘭特（Brent）與西德州（WTI）原油期貨收盤價，單位為美元/桶，僅供參考。
         </Li>
         <Li>

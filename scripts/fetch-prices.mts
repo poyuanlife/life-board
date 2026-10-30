@@ -338,6 +338,81 @@ async function loadOil(): Promise<PriceItem[]> {
   ];
 }
 
+/** 一個資料源裡只有部分項目抓不到時記在這裡（例如櫃買中心連不上，其他指數正常） */
+const partialErrors: string[] = [];
+
+// ---------- 股市指數（前一交易日收盤；台股用證交所、櫃買中心官方資料，國外用 Yahoo 財經） ----------
+const num = (s: string) => Number(String(s).replace(/,/g, ''));
+
+/** 最近 3 個月的每月 1 號（8 週 K 線需要約 2 個月資料） */
+function recentMonths() {
+  const now = new Date();
+  return [2, 1, 0].map((k) => new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - k, 1)));
+}
+const ym = (d: Date) => ({ y: d.getUTCFullYear(), m: String(d.getUTCMonth() + 1).padStart(2, '0') });
+
+/** 證交所：發行量加權股價指數歷史資料（每月一份，日期是民國年 115/10/01） */
+async function twseTaiex(): Promise<Point[]> {
+  const months = await Promise.all(
+    recentMonths().map(async (d) => {
+      const { y, m } = ym(d);
+      const j = await getJson(`https://www.twse.com.tw/rwd/zh/TAIEX/MI_5MINS_HIST?date=${y}${m}01&response=json`);
+      return (j?.data ?? []) as string[][];
+    }),
+  );
+  return months.flat().map((r) => {
+    const [ry, rm, rd] = r[0].split('/');
+    return { date: `${Number(ry) + 1911}-${rm}-${rd}`, value: num(r[4]) };
+  });
+}
+
+/** 櫃買中心：櫃買指數（每月一份，查詢要寫 115/09，不能帶日；回傳日期是 2026/10/01） */
+async function tpexIndex(): Promise<Point[]> {
+  const months = await Promise.all(
+    recentMonths().map(async (d) => {
+      const { y, m } = ym(d);
+      const j = await getJson(`https://www.tpex.org.tw/web/stock/iNdex_info/inxh/Inx_result.php?l=zh-tw&d=${y - 1911}/${m}&o=json`);
+      return (j?.tables?.[0]?.data ?? []) as string[][];
+    }),
+  );
+  return months.flat().map((r) => ({ date: r[0].replace(/\//g, '-'), value: num(r[4]) }));
+}
+
+const nonEmpty = async (p: Promise<Point[]>, what: string) => {
+  const list = (await p).filter((x) => x.value > 0);
+  if (!list.length) throw new Error(`${what} 沒有資料`);
+  return list;
+};
+
+/** Yahoo 的指數小數很長，取到小數點後 2 位 */
+const yahoo2 = async (symbol: string) => (await yahooDaily(symbol)).map((p) => ({ date: p.date, value: Math.round(p.value * 100) / 100 }));
+
+async function loadStocks(): Promise<PriceItem[]> {
+  const def = (id: string, name: string, icon: string, note: string): Def => ({ id, name, icon, category: 'stock', unit: '點', threshold: 1, note });
+  const jobs: [Def, () => Promise<Point[]>][] = [
+    // 證交所在國外主機偶爾連不上，就改用 Yahoo 的同一個指數
+    [def('taiex', '台股加權指數', '🇹🇼', '證交所'), () => nonEmpty(twseTaiex(), '證交所').catch(() => yahoo2('^TWII'))],
+    [def('tpex', '櫃買指數', '🇹🇼', '櫃買中心・上櫃股票'), () => nonEmpty(tpexIndex(), '櫃買中心')],
+    [def('dji', '道瓊工業指數', '🇺🇸', '美股大型股'), () => yahoo2('^DJI')],
+    [def('spx', 'S&P 500', '🇺🇸', '美股整體表現'), () => yahoo2('^GSPC')],
+    [def('nasdaq', '那斯達克', '🇺🇸', '美國科技股'), () => yahoo2('^IXIC')],
+    [def('sox', '費城半導體', '🇺🇸', '和台灣電子股關係密切'), () => yahoo2('^SOX')],
+    [def('n225', '日經 225', '🇯🇵', '日本股市'), () => yahoo2('^N225')],
+  ];
+  const results = await Promise.allSettled(jobs.map(([, fn]) => fn()));
+  const items: PriceItem[] = [];
+  results.forEach((r, i) => {
+    if (r.status === 'fulfilled' && r.value.length) items.push(build(jobs[i][0], r.value));
+    else {
+      console.warn(`股市指數 ${jobs[i][0].name} 抓不到：${r.status === 'rejected' ? String(r.reason).slice(0, 200) : '沒有資料'}`);
+      partialErrors.push(`${jobs[i][0].name}：暫時抓不到`);
+    }
+  });
+  // 只有部分抓不到時，其餘照常顯示；抓不到的記在 partialErrors，main() 會沿用網站上次的資料補上
+  if (!items.length) throw new Error('股市指數全部抓不到');
+  return items;
+}
+
 // ---------- 組合 ----------
 const SOURCES: [string, () => Promise<PriceItem | PriceItem[]>][] = [
   ['油價', loadFuel],
@@ -348,6 +423,7 @@ const SOURCES: [string, () => Promise<PriceItem | PriceItem[]>][] = [
   ['匯率', loadFx],
   ['國際金屬', loadMetals],
   ['國際原油', loadOil],
+  ['股市指數', loadStocks],
 ];
 
 async function main() {
@@ -364,6 +440,8 @@ async function main() {
       console.warn(`${SOURCES[i][0]} 詳細錯誤：${String(r.reason).slice(0, 300)}`);
     }
   });
+
+  errors.push(...partialErrors);
 
   // 有資料源抓不到時，沿用網站上次發布的價格，不要讓整區消失
   if (errors.length) {
