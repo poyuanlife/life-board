@@ -22,7 +22,7 @@ export const WIDGETS: Record<WidgetId, { icon: string; label: string }> = {
   weather: { icon: '🌡️', label: '天氣' },
   quakes: { icon: '🌏', label: '最新地震' },
   typhoon: { icon: '🌀', label: '颱風動態（有颱風才出現）' },
-  fuel: { icon: '⛽', label: '油價' },
+  fuel: { icon: '⛽', label: '油價・國際原油' },
   gold: { icon: '💰', label: '金價・國際金屬' },
   fx: { icon: '💱', label: '匯率' },
   gauge: { icon: '🌡️', label: '物價溫度計' },

@@ -325,6 +325,19 @@ async function loadMetals(): Promise<PriceItem[]> {
   ];
 }
 
+// ---------- 國際原油（Yahoo 財經期貨收盤價，美元/桶，新聞常用的單位，不換算台幣） ----------
+async function loadOil(): Promise<PriceItem[]> {
+  const [brent, wti] = await Promise.all([yahooDaily('BZ=F'), yahooDaily('CL=F')]);
+  const usd = (list: Point[]) => list.map((p) => ({ date: p.date, value: Math.round(p.value * 100) / 100 }));
+  return [
+    build(
+      { id: 'brent', name: '布蘭特原油', icon: '🛢️', category: 'oil', unit: '美元/桶', threshold: 2, note: '國際期貨價，中油調價參考之一' },
+      usd(brent),
+    ),
+    build({ id: 'wti', name: '西德州原油', icon: '🛢️', category: 'oil', unit: '美元/桶', threshold: 2, note: 'WTI 國際期貨價' }, usd(wti)),
+  ];
+}
+
 // ---------- 組合 ----------
 const SOURCES: [string, () => Promise<PriceItem | PriceItem[]>][] = [
   ['油價', loadFuel],
@@ -334,6 +347,7 @@ const SOURCES: [string, () => Promise<PriceItem | PriceItem[]>][] = [
   ['毛豬', loadPork],
   ['匯率', loadFx],
   ['國際金屬', loadMetals],
+  ['國際原油', loadOil],
 ];
 
 async function main() {
