@@ -3,11 +3,12 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Link } from 'expo-router';
 import { BargainCard } from '@/components/BargainCard';
 import { LayoutEditor } from '@/components/LayoutEditor';
+import { MenuButton, WidgetMenu } from '@/components/WidgetMenu';
 import { QuakeMini, TyphoonMini, WeatherMini } from '@/components/MiniWidgets';
 import { PriceCard } from '@/components/PriceCard';
 import { PriceGauge } from '@/components/PriceGauge';
 import { SiteLayout } from '@/components/SiteLayout';
-import { DEFAULT_LAYOUT, flatOrder, normalize, type Layout, type WidgetId } from '@/lib/layout';
+import { DEFAULT_LAYOUT, flatOrder, normalize, WIDGETS, type Layout, type WidgetId } from '@/lib/layout';
 import { meta, PAGES } from '@/lib/meta';
 import { PRICES, taipeiTime } from '@/lib/prices-data';
 import type { Category, PriceItem } from '@/lib/series';
@@ -20,13 +21,22 @@ const latest = (weekly as WeeklyArticle[])[0];
 
 const SECTIONS: Record<Category, { title: string; hint: string }> = {
   fuel: { title: '⛽ 油價', hint: '中油牌價・每週一調整' },
-  fx: { title: '💱 匯率', hint: '國際中間價，換匯請以銀行牌告為準・不計入溫度計' },
+  fx: {
+    title: '💱 匯率',
+    hint: '國際中間價，換匯請以銀行牌告為準・不計入溫度計',
+  },
   gold: {
     title: '💰 金價・國際金屬',
     hint: '國際價格換算台幣：黃金 1 錢 = 3.75 公克（銀樓買賣價另計），銅與鐵礦砂為期貨價（非回收價）・不計入溫度計',
   },
-  metal: { title: '🔩 國際金屬', hint: '國際期貨價格換算台幣，不是回收價・不計入溫度計' },
-  veg: { title: '🥬 蔬菜', hint: '農業部・台北一市場批發價（零售價約為 2～3 倍）' },
+  metal: {
+    title: '🔩 國際金屬',
+    hint: '國際期貨價格換算台幣，不是回收價・不計入溫度計',
+  },
+  veg: {
+    title: '🥬 蔬菜',
+    hint: '農業部・台北一市場批發價（零售價約為 2～3 倍）',
+  },
   fruit: { title: '🍎 水果', hint: '農業部・台北一市場批發價' },
   fish: { title: '🐟 魚貨海鮮', hint: '農業部・全台魚市場批發價' },
   meat: { title: '🥩 肉品・雞蛋', hint: '農業部・產地/拍賣價' },
@@ -59,6 +69,14 @@ export default function Home() {
   const [stored, setStored] = useStoredState<Layout>('home-layout', DEFAULT_LAYOUT);
   const layout = normalize(stored);
   const [editing, setEditing] = useState(false);
+  const [menuFor, setMenuFor] = useState<WidgetId | null>(null);
+  // 剛隱藏區塊時，畫面下方出現「復原」幾秒鐘
+  const [undo, setUndo] = useState<{ before: Layout; label: string } | null>(null);
+  useEffect(() => {
+    if (!undo) return;
+    const timer = setTimeout(() => setUndo(null), 6000);
+    return () => clearTimeout(timer);
+  }, [undo]);
 
   const wide = inner >= TWO_COLUMN_MIN && layout.side.length > 0;
   const mainWidth = wide ? inner - SIDE_WIDTH - 20 : inner;
@@ -66,45 +84,59 @@ export default function Home() {
   const columns = mainWidth >= 1180 ? 4 : mainWidth >= 820 ? 3 : mainWidth >= 520 ? 2 : 1;
   const gap = 12;
 
-  const section = (key: Category, also: Category[] = []) => {
+  const section = (key: Category, menu: ReactNode, also: Category[] = []) => {
     const list = data.items.filter((i) => i.category === key || also.includes(i.category));
     if (!list.length) return null;
-    return <Section title={SECTIONS[key].title} hint={SECTIONS[key].hint} list={list} columns={columns} gap={gap} />;
+    return (
+      <Section
+        title={SECTIONS[key].title}
+        hint={SECTIONS[key].hint}
+        list={list}
+        columns={columns}
+        gap={gap}
+        menu={menu}
+      />
+    );
   };
 
   const widget = (id: WidgetId): ReactNode => {
+    const menu = <MenuButton id={id} onOpen={setMenuFor} />;
     switch (id) {
       case 'weather':
-        return <WeatherMini />;
+        return <WeatherMini menu={menu} />;
       case 'quakes':
-        return <QuakeMini />;
+        return <QuakeMini menu={menu} />;
       case 'typhoon':
-        return <TyphoonMini />;
+        return <TyphoonMini menu={menu} />;
       case 'fuel':
       case 'fx':
       case 'veg':
       case 'fruit':
       case 'fish':
       case 'meat':
-        return section(id);
+        return section(id, menu);
       case 'gold':
-        return section('gold', ['metal']);
+        return section('gold', menu, ['metal']);
       case 'gauge':
-        return <PriceGauge items={data.items} />;
+        return <PriceGauge items={data.items} menu={menu} />;
       case 'bargain':
-        return <BargainCard items={data.items} />;
+        return <BargainCard items={data.items} menu={menu} />;
       case 'weekly':
         return latest ? (
-          <Link href={`/weekly/${latest.week}`} asChild>
-            <Pressable style={StyleSheet.flatten([styles.teaser, { backgroundColor: t.card, borderColor: t.border }])}>
-              <Text style={{ fontSize: 22 }}>📝</Text>
-              <View style={{ flex: 1, gap: 2 }}>
-                <Text style={{ color: t.faint, fontSize: 12 }}>每週物價觀察・{weekRange(latest)}</Text>
-                <Text style={{ color: t.text, fontSize: 15, fontWeight: '700' }}>{latest.title}</Text>
-              </View>
-              <Text style={{ color: t.accent, fontSize: 14 }}>閱讀 →</Text>
-            </Pressable>
-          </Link>
+          <View style={styles.weeklyRow}>
+            <Link href={`/weekly/${latest.week}`} asChild>
+              <Pressable
+                style={StyleSheet.flatten([styles.teaser, { backgroundColor: t.card, borderColor: t.border }])}>
+                <Text style={{ fontSize: 22 }}>📝</Text>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text style={{ color: t.faint, fontSize: 12 }}>每週物價觀察・{weekRange(latest)}</Text>
+                  <Text style={{ color: t.text, fontSize: 15, fontWeight: '700' }}>{latest.title}</Text>
+                </View>
+                <Text style={{ color: t.accent, fontSize: 14 }}>閱讀 →</Text>
+              </Pressable>
+            </Link>
+            {menu}
+          </View>
         ) : null;
     }
   };
@@ -136,7 +168,6 @@ export default function Home() {
           layout={layout}
           wide={inner >= TWO_COLUMN_MIN}
           onChange={setStored}
-          onReset={() => setStored(DEFAULT_LAYOUT)}
           onDone={() => setEditing(false)}
         />
       ) : (
@@ -155,11 +186,37 @@ export default function Home() {
 
           <Text style={[styles.footnote, { color: t.faint }]}>
             單位：食物價格以台斤（600 公克）為主，旁邊附上每公斤價格。{'\n'}
-            燈號：🔴 漲・🟡 持平・🟢 跌（蔬果、魚貨 ±5%、肉蛋 ±3%、匯率與金價 ±1%、國際金屬 ±2% 以內算持平）{'\n'}
-            K 線：每根代表一週，開盤 = 上週收盤，紅 = 收盤比開盤高，綠 = 比開盤低。點或滑過 K 棒可看明細。{'\n'}
-            資料更新：{taipeiTime(data.updatedAt)}（每天早上自動更新）・按右上「⚙️ 自訂版面」可調整區塊順序
+            燈號：🔴 漲・🟡 持平・🟢 跌（蔬果、魚貨 ±5%、肉蛋 ±3%、匯率與金價 ±1%、國際金屬 ±2% 以內算持平）{'\n'}K
+            線：每根代表一週，開盤 = 上週收盤，紅 = 收盤比開盤高，綠 = 比開盤低。點或滑過 K 棒可看明細。
+            {'\n'}
+            資料更新：{taipeiTime(data.updatedAt)}
+            （每天早上自動更新）・按區塊右上的 ⋯ 或「⚙️ 自訂版面」可調整版面
           </Text>
         </>
+      )}
+
+      <WidgetMenu
+        id={menuFor}
+        layout={layout}
+        wide={wide}
+        onChange={setStored}
+        onHide={(id) => setUndo({ before: layout, label: WIDGETS[id].label })}
+        onCustomize={() => setEditing(true)}
+        onClose={() => setMenuFor(null)}
+      />
+      {undo && (
+        <View style={[styles.toast, { backgroundColor: t.text }]} accessibilityLiveRegion="polite">
+          <Text style={{ color: t.bg, flex: 1 }}>已隱藏「{undo.label}」，可在「⚙️ 自訂版面」找回</Text>
+          <Pressable
+            onPress={() => {
+              setStored(undo.before);
+              setUndo(null);
+            }}
+            accessibilityRole="button"
+            style={styles.toastBtn}>
+            <Text style={{ color: t.bg, fontWeight: '800' }}>復原</Text>
+          </Pressable>
+        </View>
       )}
     </SiteLayout>
   );
@@ -171,12 +228,14 @@ function Section({
   list,
   columns,
   gap,
+  menu,
 }: {
   title: string;
   hint: string;
   list: PriceItem[];
   columns: number;
   gap: number;
+  menu?: ReactNode;
 }) {
   const t = useTheme();
   return (
@@ -185,7 +244,17 @@ function Section({
         <Text style={[styles.h2, { color: t.text }]} role="heading" aria-level={2}>
           {title}
         </Text>
-        <Text style={{ color: t.faint, fontSize: 12, flexShrink: 1 }}>{hint}</Text>
+        <Text
+          style={{
+            color: t.faint,
+            fontSize: 12,
+            flexShrink: 1,
+            flex: 1,
+            minWidth: 160,
+          }}>
+          {hint}
+        </Text>
+        {menu}
       </View>
       <View style={[styles.grid, { marginHorizontal: -gap / 2, rowGap: gap }]}>
         {list.map((item) => (
@@ -199,15 +268,63 @@ function Section({
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'flex-end', flexWrap: 'wrap', gap: 10 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
   h1: { fontSize: 28, fontWeight: '800' },
   h2: { fontSize: 19, fontWeight: '700' },
-  editBtn: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, minHeight: 44, justifyContent: 'center' },
+  editBtn: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    minHeight: 44,
+    justifyContent: 'center',
+  },
   twoCols: { flexDirection: 'row', gap: 20, alignItems: 'flex-start' },
   col: { gap: 20 },
   section: { gap: 10 },
-  sectionHead: { flexDirection: 'row', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' },
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 10,
+    flexWrap: 'wrap',
+  },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
-  teaser: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderRadius: 16, padding: 16 },
+  teaser: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+  },
   footnote: { fontSize: 12, lineHeight: 20 },
+  weeklyRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  // 畫面最下方的提示（網頁上固定在視窗底部）
+  toast: {
+    position: 'fixed' as 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 16,
+    maxWidth: 520,
+    marginHorizontal: 'auto',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 12,
+    paddingLeft: 16,
+    paddingRight: 6,
+    paddingVertical: 6,
+    zIndex: 50,
+  },
+  toastBtn: {
+    minHeight: 44,
+    minWidth: 64,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

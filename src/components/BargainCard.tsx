@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { ItemIcon } from './ItemIcon';
 import { perKg, SHOPPING, vsAverage, type PriceItem } from '@/lib/series';
@@ -9,7 +10,7 @@ const PRICEY = 20; // 貴 20% 以上 → 偏貴
 type Row = { item: PriceItem; diff: number };
 
 // 本週划算推薦：拿目前價格跟最近 8 週平均比，找出特別便宜、特別貴的
-export function BargainCard({ items }: { items: PriceItem[] }) {
+export function BargainCard({ items, menu }: { items: PriceItem[]; menu?: ReactNode }) {
   const t = useTheme();
   const rows: Row[] = items
     .filter((i) => SHOPPING.includes(i.category))
@@ -30,6 +31,7 @@ export function BargainCard({ items }: { items: PriceItem[] }) {
         <Column title="比平常便宜，適合多買" rows={cheap} tone="down" empty="這週沒有特別便宜的品項" />
         <Column title="比平常貴，可以先少買" rows={pricey} tone="up" empty="這週沒有特別貴的品項" />
       </View>
+      {menu && <View style={styles.menu}>{menu}</View>}
     </View>
   );
 }
@@ -67,6 +69,7 @@ function Column({ title, rows, tone, empty }: { title: string; rows: Row[]; tone
 }
 
 const styles = StyleSheet.create({
+  menu: { position: 'absolute', top: 10, right: 10 },
   card: { borderRadius: 16, borderWidth: 1, padding: 16, gap: 14 },
   title: { fontSize: 17, fontWeight: '700' },
   cols: { flexDirection: 'row', flexWrap: 'wrap', gap: 20 },

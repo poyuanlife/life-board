@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { ItemIcon } from './ItemIcon';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
@@ -21,7 +22,7 @@ function arc(from: number, to: number, r: number, cx: number, cy: number) {
 }
 
 // 物價溫度計：綜合油價、菜價、肉蛋本週平均漲跌
-export function PriceGauge({ items }: { items: PriceItem[] }) {
+export function PriceGauge({ items, menu }: { items: PriceItem[]; menu?: ReactNode }) {
   const t = useTheme();
   const goods = items.filter((i) => IN_GAUGE.includes(i.category) && i.changePct != null);
   const avg = goods.length ? goods.reduce((s, i) => s + (i.changePct ?? 0), 0) / goods.length : 0;
@@ -85,6 +86,7 @@ export function PriceGauge({ items }: { items: PriceItem[] }) {
         <Mover title="漲最多" list={topUp} />
         <Mover title="跌最多" list={topDown} />
       </View>
+      {menu && <View style={styles.menu}>{menu}</View>}
     </View>
   );
 }
@@ -110,6 +112,7 @@ function Mover({ title, list }: { title: string; list: PriceItem[] }) {
 }
 
 const styles = StyleSheet.create({
+  menu: { position: 'absolute', top: 10, right: 10 },
   card: {
     borderRadius: 16,
     borderWidth: 1,

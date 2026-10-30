@@ -1,5 +1,5 @@
 // 首頁用的精簡版天氣、地震、颱風卡片（完整內容在「天氣地震」頁）
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Link } from 'expo-router';
 import { ApiStatus } from './ApiStatus';
@@ -10,16 +10,19 @@ import { useStoredState } from '@/lib/storage';
 import { useTheme } from '@/lib/theme';
 import { useApi } from '@/lib/useApi';
 
-function More() {
+function More({ menu }: { menu?: ReactNode }) {
   const t = useTheme();
   return (
-    <Link href="/weather" style={{ color: t.accent, fontSize: 13 }}>
-      更多 →
-    </Link>
+    <View style={styles.right}>
+      <Link href="/weather" style={{ color: t.accent, fontSize: 13 }}>
+        更多 →
+      </Link>
+      {menu}
+    </View>
   );
 }
 
-export function WeatherMini() {
+export function WeatherMini({ menu }: { menu?: ReactNode }) {
   const t = useTheme();
   const state = useApi<WeatherResponse>('/api/weather');
   // 和天氣地震頁共用同一個縣市設定
@@ -30,7 +33,7 @@ export function WeatherMini() {
   const next = c?.periods.slice(0, 2) ?? [];
 
   return (
-    <Card title="天氣" icon="🌡️" right={<More />}>
+    <Card title="天氣" icon="🌡️" right={<More menu={menu} />}>
       <ApiStatus state={state} what="天氣資料" />
       {c && (
         <>
@@ -85,12 +88,12 @@ export function WeatherMini() {
   );
 }
 
-export function QuakeMini() {
+export function QuakeMini({ menu }: { menu?: ReactNode }) {
   const t = useTheme();
   const state = useApi<QuakeResponse>('/api/quakes', 240);
   const list = state.data?.quakes.slice(0, 3) ?? [];
   return (
-    <Card title="最新地震" icon="🌏" right={<More />}>
+    <Card title="最新地震" icon="🌏" right={<More menu={menu} />}>
       <ApiStatus state={state} what="地震報告" />
       {state.data && !list.length && <Text style={{ color: t.muted }}>最近沒有有感地震。</Text>}
       {list.map((q) => {
@@ -118,13 +121,13 @@ export function QuakeMini() {
 }
 
 /** 沒有颱風時整張卡片不顯示 */
-export function TyphoonMini() {
+export function TyphoonMini({ menu }: { menu?: ReactNode }) {
   const t = useTheme();
   const state = useApi<TyphoonResponse>('/api/typhoon', 1800);
   const list = state.data?.cyclones ?? [];
   if (!list.length) return null;
   return (
-    <Card title="颱風動態" icon="🌀" right={<More />}>
+    <Card title="颱風動態" icon="🌀" right={<More menu={menu} />}>
       {state.data?.image && (
         <Link href="/weather" asChild>
           <Pressable>
@@ -150,6 +153,7 @@ export function TyphoonMini() {
 }
 
 const styles = StyleSheet.create({
+  right: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   pick: {
     flexDirection: 'row',
     justifyContent: 'space-between',

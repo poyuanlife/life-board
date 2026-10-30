@@ -51,7 +51,11 @@ export function normalize(raw: Partial<Layout> | null | undefined): Layout {
   const seen = new Set<WidgetId>();
   const clean = (list: unknown) =>
     (Array.isArray(list) ? list : []).filter((x): x is WidgetId => isId(x) && !seen.has(x) && !!seen.add(x));
-  const out: Layout = { side: clean(raw?.side), main: clean(raw?.main), hidden: clean(raw?.hidden) };
+  const out: Layout = {
+    side: clean(raw?.side),
+    main: clean(raw?.main),
+    hidden: clean(raw?.hidden),
+  };
   for (const id of ALL) {
     if (seen.has(id)) continue;
     (DEFAULT_LAYOUT.side.includes(id) ? out.side : out.main).push(id);
@@ -90,8 +94,18 @@ export function move(l: Layout, id: WidgetId, dir: -1 | 1, cross: boolean): Layo
 
 /** 電腦版：在左側欄和主要欄之間換欄（放到另一欄的最上面） */
 export function switchColumn(l: Layout, id: WidgetId): Layout {
-  if (l.side.includes(id)) return { ...l, side: l.side.filter((x) => x !== id), main: [id, ...l.main] };
-  if (l.main.includes(id)) return { ...l, main: l.main.filter((x) => x !== id), side: [id, ...l.side] };
+  if (l.side.includes(id))
+    return {
+      ...l,
+      side: l.side.filter((x) => x !== id),
+      main: [id, ...l.main],
+    };
+  if (l.main.includes(id))
+    return {
+      ...l,
+      main: l.main.filter((x) => x !== id),
+      side: [id, ...l.side],
+    };
   return l;
 }
 
@@ -105,5 +119,99 @@ export function toggleHidden(l: Layout, id: WidgetId): Layout {
       main: toSide ? l.main : [...l.main, id],
     };
   }
-  return { side: l.side.filter((x) => x !== id), main: l.main.filter((x) => x !== id), hidden: [...l.hidden, id] };
+  return {
+    side: l.side.filter((x) => x !== id),
+    main: l.main.filter((x) => x !== id),
+    hidden: [...l.hidden, id],
+  };
 }
+
+export type Column = 'side' | 'main';
+
+/** 拖曳放下：把區塊放到某一欄的第 index 個（index 是拿掉這個區塊之後算的） */
+export function place(l: Layout, id: WidgetId, col: Column, index: number): Layout {
+  const out: Layout = {
+    side: l.side.filter((x) => x !== id),
+    main: l.main.filter((x) => x !== id),
+    hidden: l.hidden.filter((x) => x !== id),
+  };
+  const list = out[col];
+  list.splice(Math.max(0, Math.min(index, list.length)), 0, id);
+  return out;
+}
+
+/**
+ * 手機版單欄拖曳放下：index 是在整條清單（左側欄 + 主要欄，拿掉這個區塊之後）的位置。
+ * 剛好放在兩欄交界時，留在原本那一欄，電腦版的排法才不會被意外改掉。
+ */
+export function placeFlat(l: Layout, id: WidgetId, index: number): Layout {
+  const sideLen = l.side.filter((x) => x !== id).length;
+  if (index < sideLen) return place(l, id, 'side', index);
+  if (index === sideLen && l.side.includes(id)) return place(l, id, 'side', index);
+  return place(l, id, 'main', index - sideLen);
+}
+
+/** 移到最上面：手機版是整頁最上面，電腦版是所在那一欄的最上面 */
+export function toTop(l: Layout, id: WidgetId, flat: boolean): Layout {
+  if (flat) return placeFlat(l, id, 0);
+  return place(l, id, l.side.includes(id) ? 'side' : 'main', 0);
+}
+
+/** 可以往上／往下嗎（按鈕要不要變灰） */
+export function canMove(l: Layout, id: WidgetId, dir: -1 | 1, flat: boolean) {
+  const list = flat ? flatOrder(l) : l.side.includes(id) ? l.side : l.main;
+  const i = list.indexOf(id);
+  return i >= 0 && (dir === -1 ? i > 0 : i < list.length - 1);
+}
+
+/** 一鍵範本：套用之後還能再自己調 */
+export const PRESETS: {
+  key: string;
+  icon: string;
+  label: string;
+  hint: string;
+  layout: Layout;
+}[] = [
+  {
+    key: 'commute',
+    icon: '🚗',
+    label: '通勤族',
+    hint: '油價、天氣優先',
+    layout: {
+      side: ['weather', 'typhoon', 'quakes'],
+      main: ['fuel', 'fx', 'gold', 'gauge', 'weekly', 'bargain', 'veg', 'fruit', 'fish', 'meat'],
+      hidden: [],
+    },
+  },
+  {
+    key: 'grocery',
+    icon: '🛒',
+    label: '買菜族',
+    hint: '划算推薦、蔬果肉魚優先',
+    layout: {
+      side: ['weather', 'quakes', 'typhoon'],
+      main: ['bargain', 'veg', 'fruit', 'meat', 'fish', 'gauge', 'weekly', 'fuel', 'gold', 'fx'],
+      hidden: [],
+    },
+  },
+  {
+    key: 'money',
+    icon: '💰',
+    label: '理財族',
+    hint: '金價、匯率優先',
+    layout: {
+      side: ['weather', 'quakes', 'typhoon'],
+      main: ['gold', 'fx', 'fuel', 'gauge', 'weekly', 'bargain', 'veg', 'fruit', 'fish', 'meat'],
+      hidden: [],
+    },
+  },
+  {
+    key: 'default',
+    icon: '↺',
+    label: '預設',
+    hint: '回到原本的排法',
+    layout: DEFAULT_LAYOUT,
+  },
+];
+
+export const sameLayout = (a: Layout, b: Layout) => JSON.stringify(a) === JSON.stringify(b);
