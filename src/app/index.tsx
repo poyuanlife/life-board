@@ -1,17 +1,19 @@
 import { Fragment, useEffect, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { BargainCard } from '@/components/BargainCard';
 import { LayoutEditor } from '@/components/LayoutEditor';
 import { MenuButton, WidgetMenu } from '@/components/WidgetMenu';
 import { CaloriesMini, QuakeMini, TyphoonMini, WeatherMini, YouTubeMini } from '@/components/MiniWidgets';
+import { MarketStrip } from '@/components/MarketStrip';
 import { PriceCard } from '@/components/PriceCard';
+import { PriceRow } from '@/components/PriceRow';
 import { PriceGauge } from '@/components/PriceGauge';
 import { SiteLayout } from '@/components/SiteLayout';
 import { DEFAULT_LAYOUT, DEVICE_NOTE, flatOrder, normalize, WIDGETS, type Layout, type WidgetId } from '@/lib/layout';
 import { meta, PAGES } from '@/lib/meta';
 import { PRICES, taipeiTime } from '@/lib/prices-data';
-import type { Category, PriceItem } from '@/lib/series';
+import { SHOPPING, type Category, type PriceItem } from '@/lib/series';
 import { useStoredState } from '@/lib/storage';
 import { useTheme } from '@/lib/theme';
 import { weekRange, type WeeklyArticle } from '@/lib/weekly';
@@ -20,20 +22,20 @@ import weekly from '@/content/weekly.json';
 const latest = (weekly as WeeklyArticle[])[0];
 
 const SECTIONS: Record<Category, { title: string; hint: string }> = {
-  fuel: { title: '⛽ 油價', hint: '中油牌價每週一調整・國際原油為期貨價（美元/桶，不計入溫度計）' },
-  stock: { title: '📈 股市指數', hint: '前一交易日收盤・每天早上更新・僅供參考，不構成投資建議・不計入溫度計' },
-  oil: { title: '🛢️ 國際原油', hint: '國際期貨價（美元/桶）・不計入溫度計' },
+  fuel: { title: '⛽ 油價', hint: '中油牌價每週一調整，和上週比・國際原油為期貨價（美元/桶），和前一天比' },
+  stock: { title: '📈 股市指數', hint: '和前一個交易日比・僅供參考，不構成投資建議' },
+  oil: { title: '🛢️ 國際原油', hint: '國際期貨價（美元/桶）' },
   fx: {
     title: '💱 匯率',
-    hint: '國際中間價（台幣換 1 單位外幣），換匯請以銀行牌告為準・不計入溫度計',
+    hint: '國際中間價（台幣換 1 單位外幣），和前一天比・換匯請以銀行牌告為準',
   },
   gold: {
     title: '💰 金價・國際金屬',
-    hint: '國際價格換算台幣：黃金 1 錢 = 3.75 公克（銀樓買賣價另計），銅與鐵礦砂為期貨價（非回收價）・不計入溫度計',
+    hint: '國際價格換算台幣，和前一天比：黃金 1 錢 = 3.75 公克（銀樓買賣價另計），銅與鐵礦砂為期貨價（非回收價）',
   },
   metal: {
     title: '🔩 國際金屬',
-    hint: '國際期貨價格換算台幣，不是回收價・不計入溫度計',
+    hint: '國際期貨價格換算台幣，不是回收價',
   },
   veg: {
     title: '🥬 蔬菜',
@@ -43,6 +45,26 @@ const SECTIONS: Record<Category, { title: string; hint: string }> = {
   fish: { title: '🐟 魚貨海鮮', hint: '農業部・全台魚市場批發價（零售價約為 2～3 倍）' },
   meat: { title: '🥩 肉品・雞蛋', hint: '農業部・產地/拍賣價' },
 };
+
+// 標題下方的跳區按鈕（只列主要區塊）
+const JUMP: Partial<Record<WidgetId, string>> = {
+  market: '快覽',
+  fuel: '油價',
+  gold: '金價',
+  fx: '匯率',
+  stock: '股市',
+  weather: '天氣',
+  quakes: '地震',
+  veg: '蔬菜',
+  fruit: '水果',
+  fish: '魚貨',
+  meat: '肉蛋',
+};
+
+function jumpTo(id: WidgetId) {
+  if (typeof document === 'undefined') return;
+  document.getElementById(`w-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
 // 電腦版左側欄的寬度；內容寬度不夠放兩欄時（手機、平板直向）改成單欄
 const SIDE_WIDTH = 320;
@@ -101,9 +123,10 @@ export default function Home() {
         title={SECTIONS[key].title}
         hint={SECTIONS[key].hint}
         list={list}
-        columns={columns}
+        columns={SHOPPING.includes(key) ? Math.min(columns, 2) : columns}
         gap={gap}
         menu={menu}
+        compact={SHOPPING.includes(key)}
       />
     );
   };
@@ -111,6 +134,8 @@ export default function Home() {
   const widget = (id: WidgetId): ReactNode => {
     const menu = <MenuButton id={id} onOpen={setMenuFor} />;
     switch (id) {
+      case 'market':
+        return <MarketStrip items={data.items} columns={columns} menu={menu} />;
       case 'weather':
         return <WeatherMini menu={menu} />;
       case 'quakes':
@@ -156,8 +181,18 @@ export default function Home() {
     }
   };
 
-  // 用 Fragment 包，區塊沒內容時（例如沒有颱風）不會多出空白
-  const column = (ids: WidgetId[]) => ids.map((id) => <Fragment key={id}>{widget(id)}</Fragment>);
+  // 用 Fragment 包，區塊沒內容時（例如沒有颱風）不會多出空白；跳區按鈕的目的地另外加 id
+  const column = (ids: WidgetId[]) =>
+    ids.map((id) => {
+      const node = widget(id);
+      if (!node || !JUMP[id]) return <Fragment key={id}>{node}</Fragment>;
+      return (
+        <View key={id} nativeID={`w-${id}`}>
+          {node}
+        </View>
+      );
+    });
+  const jumps = (wide ? [...layout.main, ...layout.side] : flatOrder(layout)).filter((id) => JUMP[id]);
 
   return (
     <SiteLayout title={PAGES.home.title} description={PAGES.home.description} onWidth={setInner}>
@@ -169,6 +204,24 @@ export default function Home() {
           <Text style={{ color: t.muted, fontSize: 15 }}>資料更新：{updatedText}</Text>
         </View>
       </View>
+
+      {!editing && jumps.length > 1 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.jumps}>
+          {jumps.map((id) => (
+            <Pressable
+              key={id}
+              onPress={() => jumpTo(id)}
+              accessibilityRole="link"
+              accessibilityLabel={`跳到${WIDGETS[id].label}`}
+              style={({ hovered }: { hovered?: boolean }) => [
+                styles.jump,
+                { borderColor: t.border, backgroundColor: hovered ? t.iconBg : t.card },
+              ]}>
+              <Text style={{ color: t.text, fontSize: 14 }}>{JUMP[id]}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
 
       {staleDays >= 2 && (
         <Text style={[styles.notice, { color: t.text, borderColor: t.flat, backgroundColor: t.card }]}>
@@ -187,7 +240,7 @@ export default function Home() {
         <>
           {/* 先說怎麼看，再看價格 */}
           <Text style={[styles.legend, { color: t.muted }]}>
-            燈號是和上週比：🔴 漲・🟡 持平・🟢 跌。圖表是近 8 週走勢，每根代表一週，點一下可看那週的數字。
+            燈號：🔴 漲・🟡 持平・🟢 跌。股市、匯率、金價、原油和前一天比，油價和菜價和上週比。圖表是近 8 週走勢，點一下可看那週的數字。
           </Text>
           {data.errors.length > 0 && (
             <Text style={{ color: t.muted, fontSize: 13 }}>⚠️ 部分資料暫時抓不到：{data.errors.join('；')}</Text>
@@ -205,8 +258,9 @@ export default function Home() {
             單位：食物價格以台斤（600 公克）為主，旁邊附上每公斤價格。{'\n'}
             持平的範圍：蔬果、魚貨 ±5%，肉蛋 ±3%，匯率、金價、股市 ±1%，國際金屬與原油 ±2%。{'\n'}
             走勢圖：每根代表一週，紅色是比前一週貴，綠色是比前一週便宜；細線是那週的最高和最低。{'\n'}
-            資料每天早上自動更新。{'\n'}
-            自訂版面：按區塊右上的 ⋯，或畫面最上方的「⚙️ 自訂版面」。{DEVICE_NOTE}
+            資料每天自動更新。{'\n'}
+            自訂版面：按區塊右上的 ⋯，或畫面最上方的「⚙️ 自訂版面」。{'\n'}
+            {DEVICE_NOTE}
           </Text>
         </>
       )}
@@ -252,6 +306,7 @@ function Section({
   columns,
   gap,
   menu,
+  compact,
 }: {
   title: string;
   hint: string;
@@ -259,6 +314,7 @@ function Section({
   columns: number;
   gap: number;
   menu?: ReactNode;
+  compact?: boolean;
 }) {
   const t = useTheme();
   return (
@@ -282,7 +338,7 @@ function Section({
       <View style={[styles.grid, { marginHorizontal: -gap / 2, rowGap: gap }]}>
         {list.map((item) => (
           <View key={item.id} style={{ width: `${100 / columns}%`, paddingHorizontal: gap / 2 }}>
-            <PriceCard item={item} />
+            {compact ? <PriceRow item={item} /> : <PriceCard item={item} />}
           </View>
         ))}
       </View>
@@ -300,6 +356,8 @@ const styles = StyleSheet.create({
   h1: { fontSize: 28, fontWeight: '800' },
   h2: { fontSize: 19, fontWeight: '700' },
   legend: { fontSize: 14, lineHeight: 21 },
+  jumps: { flexDirection: 'row', gap: 8, paddingVertical: 2 },
+  jump: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 14, minHeight: 36, justifyContent: 'center' },
   notice: { fontSize: 14, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10 },
   twoCols: { flexDirection: 'row', gap: 20, alignItems: 'flex-start' },
   col: { gap: 20 },

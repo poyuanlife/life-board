@@ -10,6 +10,7 @@ import {
   dayNum,
   fromDayNum,
   KG_PER_CATTY,
+  MARKET,
   SHOPPING,
   taipeiToday,
   toWeeklyCandles,
@@ -35,7 +36,20 @@ function build(def: Def, points: Point[]): PriceItem {
   const candles = toWeeklyCandles(points, WEEKS);
   const last = candles[candles.length - 1];
   if (!last) throw new Error(`${def.name} 沒有資料`);
-  return { ...def, price: last.close, changePct: changePct(candles), candles };
+  const item: PriceItem = { ...def, price: last.close, changePct: changePct(candles), candles };
+  // 金融類再算「比前一個交易日」
+  if (MARKET.includes(def.category)) {
+    const sorted = [...points].sort((a, b) => a.date.localeCompare(b.date));
+    const [prev, cur] = sorted.slice(-2);
+    if (prev && cur && prev.value > 0) {
+      item.day = {
+        pct: Math.round(((cur.value - prev.value) / prev.value) * 10000) / 100,
+        change: Math.round((cur.value - prev.value) * 100) / 100,
+        date: cur.date,
+      };
+    }
+  }
+  return item;
 }
 
 // 日期工具

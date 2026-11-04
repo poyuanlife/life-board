@@ -23,7 +23,12 @@ export type PriceItem = {
   threshold: number; // 超過這個 % 才算漲或跌
   candles: Candle[];
   note?: string;
+  /** 金融類（股市、匯率、金價、金屬、原油）：和前一個交易日相比 */
+  day?: { pct: number; change: number; date: string };
 };
+
+/** 金融類：主要看「比前一天」，燈號也跟著前一天 */
+export const MARKET: Category[] = ['oil', 'fx', 'gold', 'metal', 'stock'];
 
 export type PricesResponse = {
   items: PriceItem[];

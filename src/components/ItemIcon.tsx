@@ -10,7 +10,7 @@ const FUEL_BADGE: Record<string, { label: string; bg: string; fg: string }> = {
   diesel: { label: '柴', bg: '#111111', fg: '#ffffff' },
 };
 
-// 價格項目的圖示：油品用色標，其他用 emoji
+// 價格項目的圖示：油品用油槍顏色的方形標籤，其他用 emoji
 export function ItemIcon({ item, size }: { item: Pick<PriceItem, 'id' | 'icon'>; size: number }) {
   const t = useTheme();
   const badge = FUEL_BADGE[item.id];
@@ -20,7 +20,7 @@ export function ItemIcon({ item, size }: { item: Pick<PriceItem, 'id' | 'icon'>;
       style={{
         width: size,
         height: size,
-        borderRadius: size / 2,
+        borderRadius: Math.round(size * 0.24), // 方形標籤，和圓形的漲跌燈號區分
         backgroundColor: badge.bg,
         alignItems: 'center',
         justifyContent: 'center',
@@ -29,7 +29,7 @@ export function ItemIcon({ item, size }: { item: Pick<PriceItem, 'id' | 'icon'>;
         borderColor: t.border,
       }}
     >
-      <Text style={{ color: badge.fg, fontSize: size * 0.42, fontWeight: '800' }}>{badge.label}</Text>
+      <Text style={{ color: badge.fg, fontSize: Math.max(11, size * 0.42), fontWeight: '800' }}>{badge.label}</Text>
     </View>
   );
 }

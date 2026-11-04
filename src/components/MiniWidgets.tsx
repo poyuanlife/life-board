@@ -193,7 +193,7 @@ export function CaloriesMini({ menu }: { menu?: ReactNode }) {
           </Text>
           {target != null && (
             <View style={[styles.bar, { backgroundColor: t.border }]}>
-              <View style={{ width: `${pct}%`, height: '100%', borderRadius: 4, backgroundColor: over ? t.up : t.down }} />
+              <View style={{ width: `${pct}%`, height: '100%', borderRadius: 4, backgroundColor: over ? t.quake3 : t.accent }} />
             </View>
           )}
           <Text style={{ color: t.muted, fontSize: 12 }}>
@@ -220,7 +220,7 @@ export function YouTubeMini({ menu }: { menu?: ReactNode }) {
       {list.map((v, i) => (
         <Link key={v.id} href={`https://www.youtube.com/watch?v=${v.id}`} target="_blank" rel="noopener noreferrer" asChild>
           <Pressable style={styles.yt}>
-            <Text style={{ color: t.up, fontWeight: '800', width: 16 }}>{i + 1}</Text>
+            <Text style={{ color: t.muted, fontWeight: '800', width: 16 }}>{i + 1}</Text>
             <Image source={{ uri: v.thumbnail }} style={styles.ytThumb} accessibilityLabel={v.title} />
             <View style={{ flex: 1, gap: 2 }}>
               <Text style={{ color: t.text, fontSize: 13, fontWeight: '600' }} numberOfLines={2}>

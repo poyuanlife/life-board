@@ -70,7 +70,7 @@ export function PriceGauge({ items, menu }: { items: PriceItem[]; menu?: ReactNo
           <View style={[styles.dot, { backgroundColor: t[overall] }]} />
           <Text style={{ color: t.text, fontSize: 15, fontWeight: '600' }}>{headline}</Text>
         </View>
-        <Text style={{ color: t.faint, fontSize: 12, marginTop: 4 }}>{goods.length} 項民生物資與上週相比的平均漲跌</Text>
+        <Text style={{ color: t.faint, fontSize: 12, marginTop: 4 }}>{goods.length} 項民生物資與上週相比的平均漲跌（不含股市、匯率、金價等金融類）</Text>
       </View>
 
       <View style={styles.summaryCol}>

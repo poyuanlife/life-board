@@ -1,15 +1,18 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { ItemIcon } from './ItemIcon';
 import { CandleChart } from './CandleChart';
+import { changeOf, shortDate } from './MarketStrip';
 import { perKg, trendOf, type PriceItem } from '@/lib/series';
 import { TREND_LABEL, useTheme } from '@/lib/theme';
 
 export function PriceCard({ item }: { item: PriceItem }) {
   const t = useTheme();
-  const trend = trendOf(item.changePct, item.threshold);
+  // 金融類看「比前一天」，其他看「比上週」；燈號跟著同一個數字
+  const { pct, since } = changeOf(item);
+  const trend = trendOf(pct, item.threshold);
   // 匯率看到小數 2 位、金價取整數，其他 1 位
   const digits = item.category === 'fx' || item.category === 'stock' ? 2 : item.category === 'gold' || item.category === 'metal' ? 0 : 1;
-  const pct = item.changePct ?? 0;
+  const week = item.changePct ?? 0;
   const kg = perKg(item, item.price); // 食物：主價格是台斤，旁邊補上公斤
   // 匯率說「變貴／變便宜」比「漲／跌」好懂（數字是台幣換 1 單位外幣）
   const label = item.category === 'fx' && trend !== 'flat' ? (trend === 'up' ? '變貴' : '變便宜') : TREND_LABEL[trend].label;
@@ -46,11 +49,18 @@ export function PriceCard({ item }: { item: PriceItem }) {
           </Text>
         )}
         <Text style={[styles.pct, { color: t.text }]}>
-          <Text style={{ color: t.muted, fontSize: 12, fontWeight: '400' }}>比上週 </Text>
+          <Text style={{ color: t.muted, fontSize: 12, fontWeight: '400' }}>比{since} </Text>
           {pct > 0 ? '+' : ''}
           {pct.toFixed(1)}%
         </Text>
       </View>
+      {item.day && (
+        <Text style={{ color: t.muted, fontSize: 12, marginTop: -6, fontVariant: ['tabular-nums'] }}>
+          {shortDate(item.day.date)}・{item.day.change > 0 ? '+' : ''}
+          {item.day.change.toLocaleString('en-US', { maximumFractionDigits: 2 })}・比上週 {week > 0 ? '+' : ''}
+          {week.toFixed(1)}%
+        </Text>
+      )}
 
       <CandleChart candles={item.candles} digits={digits} name={item.name} unit={item.unit} />
     </View>

@@ -2,6 +2,9 @@
 import { useMemo, useRef, useState } from 'react';
 import { PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
+  canMove,
+  flatOrder,
+  move,
   PRESETS,
   place,
   placeFlat,
@@ -157,7 +160,9 @@ export function LayoutEditor({ layout, wide, onChange, onDone }: Props) {
   });
   const scrolled = () => (auto.current.el ? auto.current.el.scrollTop - auto.current.start : 0);
 
-  const flat = [...layout.side, ...layout.main];
+  const flat = flatOrder(layout);
+  // 套用範本前的版面，可以按「復原」回去
+  const [presetUndo, setPresetUndo] = useState<{ before: Layout; label: string } | null>(null);
   const lists: ListKey[] = wide ? ['side', 'main'] : ['flat'];
   const idsOf = (k: ListKey) => (k === 'flat' ? flat : layout[k]);
 
@@ -276,6 +281,18 @@ export function LayoutEditor({ layout, wide, onChange, onDone }: Props) {
           {w.label}
         </Text>
         <Btn
+          label="▲"
+          a11y={`把 ${w.label} 往上移`}
+          disabled={!canMove(layout, id, -1, list === 'flat')}
+          onPress={() => onChange(move(layout, id, -1, list === 'flat'))}
+        />
+        <Btn
+          label="▼"
+          a11y={`把 ${w.label} 往下移`}
+          disabled={!canMove(layout, id, 1, list === 'flat')}
+          onPress={() => onChange(move(layout, id, 1, list === 'flat'))}
+        />
+        <Btn
           label="⤒"
           a11y={`把 ${w.label} 移到最上面`}
           disabled={isTop}
@@ -320,11 +337,8 @@ export function LayoutEditor({ layout, wide, onChange, onDone }: Props) {
           const pos = others.indexOf(id);
           return (
             <View key={id} style={{ gap: 6, zIndex: drag?.id === id ? 100 : 0 }}>
-              {k === 'flat' && i === 0 && layout.side.length > 0 && (
-                <Text style={[styles.colTitle, { color: t.muted }]}>最上方（電腦版的左側欄）</Text>
-              )}
-              {k === 'flat' && i === layout.side.length && (
-                <Text style={[styles.colTitle, { color: t.muted }]}>接著（電腦版的主要欄）</Text>
+              {k === 'flat' && i === 0 && (
+                <Text style={[styles.colTitle, { color: t.muted }]}>手機上由上到下的順序</Text>
               )}
               <View>
                 {row(id, k)}
@@ -355,8 +369,7 @@ export function LayoutEditor({ layout, wide, onChange, onDone }: Props) {
         <View style={{ flex: 1, minWidth: 200, gap: 2 }}>
           <Text style={{ color: t.text, fontSize: 18, fontWeight: '800' }}>⚙️ 自訂版面</Text>
           <Text style={{ color: t.muted, fontSize: 13, lineHeight: 19 }}>
-            按住左邊的 ≡ 拖曳排序{wide ? '，可以拖到左側欄或主要欄' : ''}；⤒
-            是直接移到最上面。
+            按住左邊的 ≡ 拖曳，或用 ▲▼ 調整順序{wide ? '；◀▶ 換到左側欄或主要欄' : ''}；⤒ 是直接移到最上面。
           </Text>
         </View>
         <Pressable onPress={onDone} accessibilityRole="button" style={[styles.action, { borderColor: t.accent, backgroundColor: t.accent }]}>
@@ -377,7 +390,10 @@ export function LayoutEditor({ layout, wide, onChange, onDone }: Props) {
             return (
               <Pressable
                 key={p.key}
-                onPress={() => onChange(p.layout)}
+                onPress={() => {
+                  if (!on) setPresetUndo({ before: layout, label: p.label });
+                  onChange(p.layout);
+                }}
                 accessibilityRole="button"
                 accessibilityState={{ selected: on }}
                 style={[
@@ -395,6 +411,20 @@ export function LayoutEditor({ layout, wide, onChange, onDone }: Props) {
             );
           })}
         </View>
+        {presetUndo && (
+          <View style={[styles.undo, { backgroundColor: t.card, borderColor: t.border }]} accessibilityLiveRegion="polite">
+            <Text style={{ color: t.text, flex: 1, fontSize: 14 }}>已套用「{presetUndo.label}」範本</Text>
+            <Pressable
+              onPress={() => {
+                onChange(presetUndo.before);
+                setPresetUndo(null);
+              }}
+              accessibilityRole="button"
+              style={styles.undoBtn}>
+              <Text style={{ color: t.accent, fontWeight: '700' }}>復原</Text>
+            </Pressable>
+          </View>
+        )}
       </View>
 
       <View style={wide ? styles.cols : undefined}>{lists.map(renderList)}</View>
@@ -438,6 +468,8 @@ const styles = StyleSheet.create({
   },
   doneBottom: { alignItems: 'center' },
   note: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: 12, padding: 12 },
+  undo: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 12, paddingLeft: 12, paddingRight: 4 },
+  undoBtn: { minHeight: 44, minWidth: 60, alignItems: 'center', justifyContent: 'center' },
   presets: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   preset: {
     flexGrow: 1,
