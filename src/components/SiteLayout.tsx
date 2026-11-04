@@ -40,7 +40,7 @@ export function SiteLayout({ title, description, maxWidth = 1320, children, onWi
             <Link href="/" style={[styles.brand, { color: t.text }]}>
               🧺 生活物價看板
             </Link>
-            <View style={styles.nav}>
+            <View style={styles.nav} role="navigation">
               {NAV.map((n) => {
                 const active = n.href === '/' ? path === '/' : path.startsWith(n.href);
                 return (
@@ -67,6 +67,7 @@ export function SiteLayout({ title, description, maxWidth = 1320, children, onWi
         </View>
 
         <View
+          role="main"
           style={[styles.inner, { maxWidth }]}
           onLayout={onWidth ? (e) => onWidth(e.nativeEvent.layout.width - 32) : undefined}>
           {children}

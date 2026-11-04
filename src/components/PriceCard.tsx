@@ -11,6 +11,8 @@ export function PriceCard({ item }: { item: PriceItem }) {
   const digits = item.category === 'fx' || item.category === 'stock' ? 2 : item.category === 'gold' || item.category === 'metal' ? 0 : 1;
   const pct = item.changePct ?? 0;
   const kg = perKg(item, item.price); // 食物：主價格是台斤，旁邊補上公斤
+  // 匯率說「變貴／變便宜」比「漲／跌」好懂（數字是台幣換 1 單位外幣）
+  const label = item.category === 'fx' && trend !== 'flat' ? (trend === 'up' ? '變貴' : '變便宜') : TREND_LABEL[trend].label;
 
   return (
     <View style={[styles.card, { backgroundColor: t.card, borderColor: t.border }]}>
@@ -19,14 +21,16 @@ export function PriceCard({ item }: { item: PriceItem }) {
           <ItemIcon item={item} size={item.category === 'fuel' ? 44 : 32} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.name, { color: t.text }]}>{item.name}</Text>
-          {item.note && <Text style={{ color: t.faint, fontSize: 11 }}>{item.note}</Text>}
+          <Text style={[styles.name, { color: t.text }]} role="heading" aria-level={3}>
+            {item.name}
+          </Text>
+          {item.note && <Text style={{ color: t.faint, fontSize: 12 }}>{item.note}</Text>}
         </View>
         {/* 紅綠燈：顏色 + 圖示 + 文字，不只靠顏色 */}
         <View style={[styles.light, { borderColor: t[trend] }]}>
           <View style={[styles.dot, { backgroundColor: t[trend] }]} />
           <Text style={{ color: t.text, fontSize: 12, fontWeight: '600' }}>
-            {TREND_LABEL[trend].icon} {TREND_LABEL[trend].label}
+            {TREND_LABEL[trend].icon} {label}
           </Text>
         </View>
       </View>
@@ -35,20 +39,20 @@ export function PriceCard({ item }: { item: PriceItem }) {
         <Text style={[styles.price, { color: t.text }]}>
           {item.price.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })}
         </Text>
-        <Text style={{ color: t.muted, fontSize: 12 }}>{item.unit}</Text>
+        <Text style={{ color: t.muted, fontSize: 13 }}>{item.unit}</Text>
         {kg != null && (
           <Text style={[styles.catty, { color: t.muted, backgroundColor: t.iconBg }]}>
             ≈ {kg.toFixed(1)} 元/公斤
           </Text>
         )}
         <Text style={[styles.pct, { color: t.text }]}>
+          <Text style={{ color: t.muted, fontSize: 12, fontWeight: '400' }}>比上週 </Text>
           {pct > 0 ? '+' : ''}
           {pct.toFixed(1)}%
         </Text>
       </View>
-      <Text style={{ color: t.faint, fontSize: 11, marginTop: -6 }}>與上週相比・最近 8 週 K 線</Text>
 
-      <CandleChart candles={item.candles} digits={digits} />
+      <CandleChart candles={item.candles} digits={digits} name={item.name} unit={item.unit} />
     </View>
   );
 }

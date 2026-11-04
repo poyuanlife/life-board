@@ -359,7 +359,7 @@ export function LayoutEditor({ layout, wide, onChange, onDone }: Props) {
             是直接移到最上面。
           </Text>
         </View>
-        <Pressable onPress={onDone} style={[styles.action, { borderColor: t.accent, backgroundColor: t.accent }]}>
+        <Pressable onPress={onDone} accessibilityRole="button" style={[styles.action, { borderColor: t.accent, backgroundColor: t.accent }]}>
           <Text style={{ color: t.onAccent, fontWeight: '700' }}>完成</Text>
         </Pressable>
       </View>
@@ -413,7 +413,7 @@ export function LayoutEditor({ layout, wide, onChange, onDone }: Props) {
       )}
 
       <Pressable
-        onPress={onDone}
+        onPress={onDone} accessibilityRole="button"
         style={[styles.action, styles.doneBottom, { borderColor: t.accent, backgroundColor: t.accent }]}>
         <Text style={{ color: t.onAccent, fontWeight: '700' }}>完成</Text>
       </Pressable>

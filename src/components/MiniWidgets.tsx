@@ -39,12 +39,13 @@ export function WeatherMini({ menu }: { menu?: ReactNode }) {
   const next = c?.periods.slice(0, 2) ?? [];
 
   return (
-    <Card title="天氣" icon="🌡️" right={<More menu={menu} />}>
+    <Card title="天氣" icon="⛅" right={<More menu={menu} />}>
       <ApiStatus state={state} what="天氣資料" />
       {c && (
         <>
           <Pressable
             onPress={() => setPicking(!picking)}
+            accessibilityRole="button"
             accessibilityLabel="切換縣市"
             style={[styles.pick, { borderColor: t.border }]}>
             <Text style={{ color: t.text, fontWeight: '700' }}>📍 {c.name}</Text>
@@ -55,6 +56,8 @@ export function WeatherMini({ menu }: { menu?: ReactNode }) {
               {counties.map((x) => (
                 <Pressable
                   key={x.name}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: x.name === c.name }}
                   onPress={() => {
                     setPref({ name: x.name });
                     setPicking(false);

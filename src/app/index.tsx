@@ -20,12 +20,12 @@ import weekly from '@/content/weekly.json';
 const latest = (weekly as WeeklyArticle[])[0];
 
 const SECTIONS: Record<Category, { title: string; hint: string }> = {
-  fuel: { title: '⛽ 油價', hint: '中油牌價每週一調整・國際原油為期貨價（美元/桶），不計入溫度計' },
+  fuel: { title: '⛽ 油價', hint: '中油牌價每週一調整・國際原油為期貨價（美元/桶，不計入溫度計）' },
   stock: { title: '📈 股市指數', hint: '前一交易日收盤・每天早上更新・僅供參考，不構成投資建議・不計入溫度計' },
   oil: { title: '🛢️ 國際原油', hint: '國際期貨價（美元/桶）・不計入溫度計' },
   fx: {
     title: '💱 匯率',
-    hint: '國際中間價，換匯請以銀行牌告為準・不計入溫度計',
+    hint: '國際中間價（台幣換 1 單位外幣），換匯請以銀行牌告為準・不計入溫度計',
   },
   gold: {
     title: '💰 金價・國際金屬',
@@ -39,8 +39,8 @@ const SECTIONS: Record<Category, { title: string; hint: string }> = {
     title: '🥬 蔬菜',
     hint: '農業部・台北一市場批發價（零售價約為 2～3 倍）',
   },
-  fruit: { title: '🍎 水果', hint: '農業部・台北一市場批發價' },
-  fish: { title: '🐟 魚貨海鮮', hint: '農業部・全台魚市場批發價' },
+  fruit: { title: '🍎 水果', hint: '農業部・台北一市場批發價（零售價約為 2～3 倍）' },
+  fish: { title: '🐟 魚貨海鮮', hint: '農業部・全台魚市場批發價（零售價約為 2～3 倍）' },
   meat: { title: '🥩 肉品・雞蛋', hint: '農業部・產地/拍賣價' },
 };
 
@@ -63,9 +63,12 @@ export default function Home() {
   const t = useTheme();
   const [inner, setInner] = useState(0);
   const data = PRICES;
-  // 靜態網頁先顯示資料日期，打開後再換成使用者的今天
-  const [today, setToday] = useState(() => dateText(Date.parse(data.updatedAt)));
-  useEffect(() => setToday(dateText(Date.now())), []);
+  // 顯示資料本身的日期（不是使用者的今天），避免把舊價格看成今天的
+  const updatedMs = Date.parse(data.updatedAt);
+  const updatedText = `${dateText(updatedMs)} ${taipeiTime(data.updatedAt).slice(11)}`;
+  // 超過約一天沒更新就提醒（打開網頁後才算，靜態網頁不顯示）
+  const [staleDays, setStaleDays] = useState(0);
+  useEffect(() => setStaleDays(Math.floor((Date.now() - updatedMs) / 86400000)), [updatedMs]);
 
   // 每個人自己的版面（存在瀏覽器）；第一次來或設定壞掉就用預設
   const [stored, setStored] = useStoredState<Layout>('home-layout', DEFAULT_LAYOUT);
@@ -81,13 +84,8 @@ export default function Home() {
     if (params.edit) router.replace('/');
   };
   const [menuFor, setMenuFor] = useState<WidgetId | null>(null);
-  // 剛隱藏區塊時，畫面下方出現「復原」幾秒鐘
+  // 剛隱藏區塊時，畫面下方出現「復原」，直到按復原或關閉（不自動消失，慢慢看也來得及）
   const [undo, setUndo] = useState<{ before: Layout; label: string } | null>(null);
-  useEffect(() => {
-    if (!undo) return;
-    const timer = setTimeout(() => setUndo(null), 6000);
-    return () => clearTimeout(timer);
-  }, [undo]);
 
   const wide = inner >= TWO_COLUMN_MIN && layout.side.length > 0;
   const mainWidth = wide ? inner - SIDE_WIDTH - 20 : inner;
@@ -168,9 +166,15 @@ export default function Home() {
           <Text style={[styles.h1, { color: t.text }]} role="heading" aria-level={1}>
             今日生活物價
           </Text>
-          <Text style={{ color: t.muted }}>{today}</Text>
+          <Text style={{ color: t.muted, fontSize: 15 }}>資料更新：{updatedText}</Text>
         </View>
       </View>
+
+      {staleDays >= 2 && (
+        <Text style={[styles.notice, { color: t.text, borderColor: t.flat, backgroundColor: t.card }]}>
+          ⚠️ 資料已經 {staleDays} 天沒有更新，價格可能不是最新的。
+        </Text>
+      )}
 
       {editing ? (
         <LayoutEditor
@@ -181,8 +185,12 @@ export default function Home() {
         />
       ) : (
         <>
+          {/* 先說怎麼看，再看價格 */}
+          <Text style={[styles.legend, { color: t.muted }]}>
+            燈號是和上週比：🔴 漲・🟡 持平・🟢 跌。圖表是近 8 週走勢，每根代表一週，點一下可看那週的數字。
+          </Text>
           {data.errors.length > 0 && (
-            <Text style={{ color: t.muted, fontSize: 12 }}>⚠️ 部分資料暫時抓不到：{data.errors.join('；')}</Text>
+            <Text style={{ color: t.muted, fontSize: 13 }}>⚠️ 部分資料暫時抓不到：{data.errors.join('；')}</Text>
           )}
           {wide ? (
             <View style={styles.twoCols}>
@@ -195,11 +203,9 @@ export default function Home() {
 
           <Text style={[styles.footnote, { color: t.faint }]}>
             單位：食物價格以台斤（600 公克）為主，旁邊附上每公斤價格。{'\n'}
-            燈號：🔴 漲・🟡 持平・🟢 跌（蔬果、魚貨 ±5%、肉蛋 ±3%、匯率與金價 ±1%、國際金屬與原油 ±2%、股市指數 ±1% 以內算持平）{'\n'}K
-            線：每根代表一週，開盤 = 上週收盤，紅 = 收盤比開盤高，綠 = 比開盤低。點或滑過 K 棒可看明細。
-            {'\n'}
-            資料更新：{taipeiTime(data.updatedAt)}
-            （每天早上自動更新）{'\n'}
+            持平的範圍：蔬果、魚貨 ±5%，肉蛋 ±3%，匯率、金價、股市 ±1%，國際金屬與原油 ±2%。{'\n'}
+            走勢圖：每根代表一週，紅色是比前一週貴，綠色是比前一週便宜；細線是那週的最高和最低。{'\n'}
+            資料每天早上自動更新。{'\n'}
             自訂版面：按區塊右上的 ⋯，或畫面最上方的「⚙️ 自訂」。{DEVICE_NOTE}
           </Text>
         </>
@@ -216,7 +222,7 @@ export default function Home() {
       />
       {undo && (
         <View style={[styles.toast, { backgroundColor: t.text }]} accessibilityLiveRegion="polite">
-          <Text style={{ color: t.bg, flex: 1 }}>已隱藏「{undo.label}」，可在「⚙️ 自訂版面」找回</Text>
+          <Text style={{ color: t.bg, flex: 1 }}>已隱藏「{undo.label}」，可在「⚙️ 自訂」找回</Text>
           <Pressable
             onPress={() => {
               setStored(undo.before);
@@ -225,6 +231,13 @@ export default function Home() {
             accessibilityRole="button"
             style={styles.toastBtn}>
             <Text style={{ color: t.bg, fontWeight: '800' }}>復原</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setUndo(null)}
+            accessibilityRole="button"
+            accessibilityLabel="關閉提示"
+            style={styles.toastClose}>
+            <Text style={{ color: t.bg, fontSize: 16 }}>✕</Text>
           </Pressable>
         </View>
       )}
@@ -257,7 +270,7 @@ function Section({
         <Text
           style={{
             color: t.faint,
-            fontSize: 12,
+            fontSize: 13,
             flexShrink: 1,
             flex: 1,
             minWidth: 160,
@@ -286,6 +299,8 @@ const styles = StyleSheet.create({
   },
   h1: { fontSize: 28, fontWeight: '800' },
   h2: { fontSize: 19, fontWeight: '700' },
+  legend: { fontSize: 14, lineHeight: 21 },
+  notice: { fontSize: 14, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10 },
   twoCols: { flexDirection: 'row', gap: 20, alignItems: 'flex-start' },
   col: { gap: 20 },
   section: { gap: 10 },
@@ -305,7 +320,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
   },
-  footnote: { fontSize: 12, lineHeight: 20 },
+  footnote: { fontSize: 13, lineHeight: 21 },
   weeklyRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   // 畫面最下方的提示（網頁上固定在視窗底部）
   toast: {
@@ -330,4 +345,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  toastClose: { minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' },
 });

@@ -20,7 +20,7 @@ export type WidgetId =
   | 'youtube';
 
 export const WIDGETS: Record<WidgetId, { icon: string; label: string }> = {
-  weather: { icon: '🌡️', label: '天氣' },
+  weather: { icon: '⛅', label: '天氣' },
   quakes: { icon: '🌏', label: '最新地震' },
   typhoon: { icon: '🌀', label: '颱風動態（有颱風才出現）' },
   fuel: { icon: '⛽', label: '油價・國際原油' },

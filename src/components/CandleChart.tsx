@@ -4,15 +4,15 @@ import Svg, { G, Line, Rect, Text as SvgText } from 'react-native-svg';
 import type { Candle } from '@/lib/series';
 import { useTheme } from '@/lib/theme';
 
-type Props = { candles: Candle[]; height?: number; digits?: number };
+type Props = { candles: Candle[]; height?: number; digits?: number; name?: string; unit?: string };
 
 const fmtWeek = (iso: string) => {
   const [, m, d] = iso.split('-');
   return `${Number(m)}/${Number(d)}`;
 };
 
-// 週 K 線：紅 = 本週收盤比上週高，綠 = 比上週低，灰 = 持平
-export function CandleChart({ candles, height = 96, digits = 1 }: Props) {
+// 近 8 週走勢（週 K 線）：開盤 = 前一週收盤，紅 = 比前一週高，綠 = 比前一週低，灰 = 持平
+export function CandleChart({ candles, height = 96, digits = 1, name = '', unit = '' }: Props) {
   const t = useTheme();
   const [width, setWidth] = useState(0);
   const [active, setActive] = useState<number | null>(null);
@@ -30,20 +30,25 @@ export function CandleChart({ candles, height = 96, digits = 1 }: Props) {
   const shown = active ?? candles.length - 1;
   const c = candles[shown];
   const color = (k: Candle) => (k.close > k.open ? t.up : k.close < k.open ? t.down : t.faint);
+  const f = (v: number) => v.toFixed(digits);
+  // 給螢幕閱讀器的一句話摘要（取代一根一根 K 棒）
+  const summary = candles.length
+    ? `${name}近 ${candles.length} 週走勢：從 ${f(candles[0].open)} 到 ${f(candles[candles.length - 1].close)} ${unit}，最高 ${f(hi)}，最低 ${f(lo)}`
+    : '';
 
   return (
-    <View>
-      <View onLayout={(e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width)} style={{ height }}>
+    <View role="img" aria-label={summary}>
+      <View onLayout={(e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width)} style={{ height }} aria-hidden>
         {width > 0 && (
           <Svg width={width} height={height}>
             {/* 最高、最低兩條淡格線 */}
             {[hi, lo].map((v, i) => (
               <Line key={i} x1={0} x2={plotW} y1={y(v)} y2={y(v)} stroke={t.grid} strokeWidth={1} />
             ))}
-            <SvgText x={width - 2} y={y(hi) + 4} fontSize={10} fill={t.faint} textAnchor="end">
+            <SvgText x={width - 2} y={y(hi) + 4} fontSize={11} fill={t.faint} textAnchor="end">
               {hi.toFixed(digits)}
             </SvgText>
-            <SvgText x={width - 2} y={y(lo) + 4} fontSize={10} fill={t.faint} textAnchor="end">
+            <SvgText x={width - 2} y={y(lo) + 4} fontSize={11} fill={t.faint} textAnchor="end">
               {lo.toFixed(digits)}
             </SvgText>
 
@@ -63,35 +68,35 @@ export function CandleChart({ candles, height = 96, digits = 1 }: Props) {
           </Svg>
         )}
 
-        {/* 透明的點擊/滑過區域，比 K 棒本身寬，手機好點 */}
+        {/* 透明的點擊/滑過區域，比 K 棒本身寬，手機好點。不讓鍵盤 Tab 停在每一根上（摘要已經念出來了） */}
         <View style={[StyleSheet.absoluteFill, { flexDirection: 'row', right: axisW }]}>
           {candles.map((k, i) => (
             <Pressable
               key={k.week}
               style={{ flex: 1 }}
-              onPressIn={() => setActive(i)}
+              tabIndex={-1} // 網頁版的 Pressable 只看 tabIndex
+              // 用 onPress（放開才算）：手指滑過圖表捲動頁面時不會誤觸
+              onPress={() => setActive(active === i ? null : i)}
               onHoverIn={() => setActive(i)}
               onHoverOut={() => setActive(null)}
-              accessibilityLabel={`${fmtWeek(k.week)} 當週收盤 ${k.close}`}
             />
           ))}
         </View>
       </View>
 
-      <View style={styles.xAxis}>
+      <View style={styles.xAxis} aria-hidden>
         <Text style={[styles.axisText, { color: t.faint }]}>{candles[0] ? `${fmtWeek(candles[0].week)} 當週` : ''}</Text>
         <Text style={[styles.axisText, { color: t.faint, marginRight: axisW }]}>本週</Text>
       </View>
 
-      {/* 選取的那一週的明細（預設顯示本週） */}
+      {/* 那一週的數字（預設本週）；用白話取代「開高低收」 */}
       {c && (
-        <View style={[styles.detail, { backgroundColor: t.iconBg }]}>
+        <View style={[styles.detail, { backgroundColor: t.iconBg }]} aria-hidden>
           <Text style={[styles.detailText, { color: t.text, fontWeight: '600' }]}>
             {shown === candles.length - 1 ? '本週' : `${fmtWeek(c.week)} 當週`}
           </Text>
           <Text style={[styles.detailText, { color: t.muted }]}>
-            開 {c.open.toFixed(digits)}・高 {c.high.toFixed(digits)}・低 {c.low.toFixed(digits)}・收{' '}
-            <Text style={{ color: t.text, fontWeight: '600' }}>{c.close.toFixed(digits)}</Text>
+            前一週 {f(c.open)} → <Text style={{ color: t.text, fontWeight: '600' }}>{f(c.close)}</Text>（最高 {f(c.high)}・最低 {f(c.low)}）
           </Text>
         </View>
       )}
@@ -110,7 +115,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 5,
   },
-  detailText: { fontSize: 12, fontVariant: ['tabular-nums'] },
+  detailText: { fontSize: 13, fontVariant: ['tabular-nums'] },
   xAxis: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 },
   axisText: { fontSize: 11 },
 });
