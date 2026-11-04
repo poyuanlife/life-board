@@ -45,7 +45,7 @@ export type Layout = { side: WidgetId[]; main: WidgetId[]; hidden: WidgetId[] };
 
 export const DEFAULT_LAYOUT: Layout = {
   side: ['weather', 'quakes', 'typhoon'],
-  main: ['fuel', 'gold', 'fx', 'stock', 'gauge', 'weekly', 'bargain', 'veg', 'fruit', 'fish', 'meat', 'calories', 'youtube'],
+  main: ['fuel', 'gold', 'fx', 'stock', 'gauge', 'weekly', 'calories', 'youtube', 'bargain', 'veg', 'fruit', 'fish', 'meat'],
   hidden: [],
 };
 
@@ -188,7 +188,7 @@ export const PRESETS: {
     hint: '油價、天氣優先',
     layout: {
       side: ['weather', 'typhoon', 'quakes'],
-      main: ['fuel', 'fx', 'stock', 'gold', 'gauge', 'weekly', 'bargain', 'veg', 'fruit', 'fish', 'meat', 'calories', 'youtube'],
+      main: ['fuel', 'fx', 'stock', 'gold', 'gauge', 'weekly', 'calories', 'youtube', 'bargain', 'veg', 'fruit', 'fish', 'meat'],
       hidden: [],
     },
   },
@@ -210,7 +210,7 @@ export const PRESETS: {
     hint: '股市、金價、匯率優先',
     layout: {
       side: ['weather', 'quakes', 'typhoon'],
-      main: ['stock', 'gold', 'fx', 'fuel', 'gauge', 'weekly', 'bargain', 'veg', 'fruit', 'fish', 'meat', 'calories', 'youtube'],
+      main: ['stock', 'gold', 'fx', 'fuel', 'gauge', 'weekly', 'calories', 'youtube', 'bargain', 'veg', 'fruit', 'fish', 'meat'],
       hidden: [],
     },
   },
