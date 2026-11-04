@@ -74,7 +74,7 @@ export default function Home() {
   const [stored, setStored] = useStoredState<Layout>('home-layout', DEFAULT_LAYOUT);
   const layout = normalize(stored);
   const [editing, setEditing] = useState(false);
-  // 導覽列右上角的「⚙️ 自訂」會連到 /?edit=1
+  // 導覽列右上角的「⚙️ 自訂版面」會連到 /?edit=1
   const params = useLocalSearchParams<{ edit?: string }>();
   useEffect(() => {
     if (params.edit === '1') setEditing(true);
@@ -206,7 +206,7 @@ export default function Home() {
             持平的範圍：蔬果、魚貨 ±5%，肉蛋 ±3%，匯率、金價、股市 ±1%，國際金屬與原油 ±2%。{'\n'}
             走勢圖：每根代表一週，紅色是比前一週貴，綠色是比前一週便宜；細線是那週的最高和最低。{'\n'}
             資料每天早上自動更新。{'\n'}
-            自訂版面：按區塊右上的 ⋯，或畫面最上方的「⚙️ 自訂」。{DEVICE_NOTE}
+            自訂版面：按區塊右上的 ⋯，或畫面最上方的「⚙️ 自訂版面」。{DEVICE_NOTE}
           </Text>
         </>
       )}
@@ -222,7 +222,7 @@ export default function Home() {
       />
       {undo && (
         <View style={[styles.toast, { backgroundColor: t.text }]} accessibilityLiveRegion="polite">
-          <Text style={{ color: t.bg, flex: 1 }}>已隱藏「{undo.label}」，可在「⚙️ 自訂」找回</Text>
+          <Text style={{ color: t.bg, flex: 1 }}>已隱藏「{undo.label}」，可在「⚙️ 自訂版面」找回</Text>
           <Pressable
             onPress={() => {
               setStored(undo.before);

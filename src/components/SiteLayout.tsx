@@ -60,7 +60,7 @@ export function SiteLayout({ title, description, maxWidth = 1320, children, onWi
                 href={{ pathname: '/', params: { edit: '1' } }}
                 accessibilityLabel="自訂首頁版面"
                 style={[styles.custom, { color: t.text, borderColor: t.border, backgroundColor: t.card }]}>
-                ⚙️ 自訂
+                ⚙️ 自訂版面
               </Link>
             </View>
           </View>
