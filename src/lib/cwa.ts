@@ -82,11 +82,11 @@ export function intensityRank(s: string) {
 }
 
 /** 地震震度的顏色：越大越紅，5 弱以上用紫色 */
-export function intensityColor(level: string, t: { up: string; flat: string; down: string }) {
+export function intensityColor(level: string, t: { up: string; flat: string; down: string; quake3: string; quake5: string }) {
   const r = intensityRank(level);
-  if (r >= 10) return '#7b1fa2'; // 5弱以上
+  if (r >= 10) return t.quake5; // 5弱以上
   if (r >= 8) return t.up; // 4級
-  if (r >= 6) return '#f57c00'; // 3級
+  if (r >= 6) return t.quake3; // 3級
   if (r >= 4) return t.flat; // 2級
   return t.down;
 }

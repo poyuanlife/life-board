@@ -24,7 +24,9 @@ export function BargainCard({ items, menu }: { items: PriceItem[]; menu?: ReactN
   return (
     <View style={[styles.card, { backgroundColor: t.card, borderColor: t.border }]}>
       <View style={{ gap: 2 }}>
-        <Text style={[styles.title, { color: t.text }]}>🛒 本週划算推薦</Text>
+        <Text style={[styles.title, { color: t.text }]} role="heading" aria-level={2}>
+          🛒 本週划算推薦
+        </Text>
         <Text style={{ color: t.faint, fontSize: 12 }}>目前價格與最近 8 週平均相比</Text>
       </View>
       <View style={styles.cols}>

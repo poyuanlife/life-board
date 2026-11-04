@@ -4,7 +4,7 @@ import { useTheme } from '@/lib/theme';
 
 // 油品依加油站油槍顏色：98 綠、95 黃、92 紅、柴油黑
 const FUEL_BADGE: Record<string, { label: string; bg: string; fg: string }> = {
-  fuel98: { label: '98', bg: '#1f9d3a', fg: '#ffffff' },
+  fuel98: { label: '98', bg: '#17802f', fg: '#ffffff' },
   fuel95: { label: '95', bg: '#f2c200', fg: '#1a1a1a' },
   fuel92: { label: '92', bg: '#d32f2f', fg: '#ffffff' },
   diesel: { label: '柴', bg: '#111111', fg: '#ffffff' },

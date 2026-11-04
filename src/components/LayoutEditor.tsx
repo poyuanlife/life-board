@@ -360,7 +360,7 @@ export function LayoutEditor({ layout, wide, onChange, onDone }: Props) {
           </Text>
         </View>
         <Pressable onPress={onDone} style={[styles.action, { borderColor: t.accent, backgroundColor: t.accent }]}>
-          <Text style={{ color: '#fff', fontWeight: '700' }}>完成</Text>
+          <Text style={{ color: t.onAccent, fontWeight: '700' }}>完成</Text>
         </Pressable>
       </View>
 
@@ -415,7 +415,7 @@ export function LayoutEditor({ layout, wide, onChange, onDone }: Props) {
       <Pressable
         onPress={onDone}
         style={[styles.action, styles.doneBottom, { borderColor: t.accent, backgroundColor: t.accent }]}>
-        <Text style={{ color: '#fff', fontWeight: '700' }}>完成</Text>
+        <Text style={{ color: t.onAccent, fontWeight: '700' }}>完成</Text>
       </Pressable>
     </View>
   );

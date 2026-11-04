@@ -76,7 +76,7 @@ export function EnergyCalculator({ profile, onChange }: { profile: Profile; onCh
                     key={v}
                     onPress={() => set({ sex: v })}
                     style={[styles.segBtn, { borderColor: on ? t.accent : t.border, backgroundColor: on ? t.accent : t.bg }]}>
-                    <Text style={{ color: on ? '#fff' : t.text, fontWeight: on ? '700' : '400' }}>{label}</Text>
+                    <Text style={{ color: on ? t.onAccent : t.text, fontWeight: on ? '700' : '400' }}>{label}</Text>
                   </Pressable>
                 );
               })}

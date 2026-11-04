@@ -7,7 +7,7 @@ import { Card } from './Card';
 import { intensityColor, periodLabel, wxIcon, type QuakeResponse, type TyphoonResponse, type WeatherResponse } from '@/lib/cwa';
 import { taipeiToday } from '@/lib/series';
 import { useStoredState } from '@/lib/storage';
-import { useTheme } from '@/lib/theme';
+import { readableOn, useTheme } from '@/lib/theme';
 import { useApi } from '@/lib/useApi';
 import { computeEnergy, DEFAULT_PROFILE, type Profile } from './EnergyCalculator';
 import { dayTotals, EMPTY_LOG, getDay, hasRecord, localDate, type Log } from '@/lib/diary';
@@ -107,7 +107,7 @@ export function QuakeMini({ menu }: { menu?: ReactNode }) {
         return (
           <View key={q.no + q.time} style={styles.quake}>
             <View style={[styles.mag, { backgroundColor: color }]}>
-              <Text style={{ color: '#fff', fontSize: 15, fontWeight: '800' }}>{q.mag?.toFixed(1) ?? '-'}</Text>
+              <Text style={{ color: readableOn(color), fontSize: 15, fontWeight: '800' }}>{q.mag?.toFixed(1) ?? '-'}</Text>
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ color: t.text, fontSize: 13, fontWeight: '600' }} numberOfLines={1}>
@@ -121,7 +121,7 @@ export function QuakeMini({ menu }: { menu?: ReactNode }) {
           </View>
         );
       })}
-      <Text style={{ color: t.faint, fontSize: 11 }}>氣象署地震報告，每 4 分鐘更新・不是地震預警</Text>
+      <Text style={{ color: t.faint, fontSize: 12 }}>氣象署地震報告，每 4 分鐘更新・不是地震預警</Text>
     </Card>
   );
 }

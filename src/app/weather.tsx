@@ -21,7 +21,7 @@ import { meta, PAGES } from '@/lib/meta';
 import { taipeiTime } from '@/lib/prices-data';
 import { taipeiToday } from '@/lib/series';
 import { useStoredState } from '@/lib/storage';
-import { useTheme } from '@/lib/theme';
+import { readableOn, useTheme } from '@/lib/theme';
 import { useApi } from '@/lib/useApi';
 import type { YouTubeResponse } from '@/lib/youtube';
 import youtube from '../../public/data/youtube.json';
@@ -118,8 +118,8 @@ function QuakeRow({ q }: { q: Quake }) {
     <Pressable onPress={() => setOpen(!open)} style={[styles.quake, { borderColor: t.border }]}>
       <View style={styles.quakeTop}>
         <View style={[styles.mag, { backgroundColor: color }]}>
-          <Text style={{ color: '#fff', fontSize: 10 }}>規模</Text>
-          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '800' }}>{q.mag?.toFixed(1) ?? '-'}</Text>
+          <Text style={{ color: readableOn(color), fontSize: 11 }}>規模</Text>
+          <Text style={{ color: readableOn(color), fontSize: 18, fontWeight: '800' }}>{q.mag?.toFixed(1) ?? '-'}</Text>
         </View>
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={{ color: t.text, fontWeight: '600', fontSize: 14 }}>
@@ -131,7 +131,7 @@ function QuakeRow({ q }: { q: Quake }) {
         </View>
         {!!q.maxIntensity && (
           <View style={{ alignItems: 'center' }}>
-            <Text style={{ color: t.faint, fontSize: 10 }}>最大震度</Text>
+            <Text style={{ color: t.faint, fontSize: 11 }}>最大震度</Text>
             <Text style={{ color, fontSize: 18, fontWeight: '800' }}>{q.maxIntensity.replace('級', '')}</Text>
           </View>
         )}

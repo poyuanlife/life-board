@@ -112,5 +112,5 @@ const styles = StyleSheet.create({
   },
   detailText: { fontSize: 12, fontVariant: ['tabular-nums'] },
   xAxis: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 },
-  axisText: { fontSize: 10 },
+  axisText: { fontSize: 11 },
 });

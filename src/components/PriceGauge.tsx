@@ -48,7 +48,9 @@ export function PriceGauge({ items, menu }: { items: PriceItem[]; menu?: ReactNo
   return (
     <View style={[styles.card, { backgroundColor: t.card, borderColor: t.border }]}>
       <View style={styles.gaugeCol}>
-        <Text style={[styles.title, { color: t.text }]}>🌡️ 本週物價溫度計</Text>
+        <Text style={[styles.title, { color: t.text }]} role="heading" aria-level={2}>
+          🌡️ 本週物價溫度計
+        </Text>
         <Svg width={W} height={H}>
           <Path d={arc(-RANGE, -FLAT - gap, r, cx, cy)} stroke={t.down} strokeWidth={18} fill="none" />
           <Path d={arc(-FLAT + gap, FLAT - gap, r, cx, cy)} stroke={t.flat} strokeWidth={18} fill="none" />
@@ -68,7 +70,7 @@ export function PriceGauge({ items, menu }: { items: PriceItem[]; menu?: ReactNo
           <View style={[styles.dot, { backgroundColor: t[overall] }]} />
           <Text style={{ color: t.text, fontSize: 15, fontWeight: '600' }}>{headline}</Text>
         </View>
-        <Text style={{ color: t.faint, fontSize: 11, marginTop: 4 }}>{goods.length} 項民生物資與上週相比的平均漲跌</Text>
+        <Text style={{ color: t.faint, fontSize: 12, marginTop: 4 }}>{goods.length} 項民生物資與上週相比的平均漲跌</Text>
       </View>
 
       <View style={styles.summaryCol}>

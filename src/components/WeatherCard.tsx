@@ -71,7 +71,7 @@ export function WeatherCard() {
               key={c.name}
               onPress={() => setCity(c)}
               style={[styles.chip, { backgroundColor: active ? t.accent : t.chip }]}>
-              <Text style={{ color: active ? '#fff' : t.text, fontSize: 13 }}>{c.name}</Text>
+              <Text style={{ color: active ? t.onAccent : t.text, fontSize: 13 }}>{c.name}</Text>
             </Pressable>
           );
         })}

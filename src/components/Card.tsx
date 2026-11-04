@@ -15,7 +15,7 @@ export function Card({ title, icon, right, children }: Props) {
   return (
     <View style={[styles.card, { backgroundColor: t.card, borderColor: t.border }]}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: t.text }]}>
+        <Text style={[styles.title, { color: t.text }]} role="heading" aria-level={2}>
           {icon} {title}
         </Text>
         {right}

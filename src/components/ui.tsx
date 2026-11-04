@@ -24,11 +24,11 @@ export function Chip({ label, on, onPress, onRemove }: { label: string; on?: boo
   return (
     <View style={[styles.chip, { backgroundColor: on ? t.accent : t.chip }]}>
       <Pressable onPress={onPress} style={styles.chipMain}>
-        <Text style={{ color: on ? '#fff' : t.text, fontSize: 13 }}>{label}</Text>
+        <Text style={{ color: on ? t.onAccent : t.text, fontSize: 13 }}>{label}</Text>
       </Pressable>
       {onRemove && (
         <Pressable onPress={onRemove} style={styles.chipX} accessibilityLabel={`刪除${label}`}>
-          <Text style={{ color: on ? '#fff' : t.faint, fontSize: 13 }}>✕</Text>
+          <Text style={{ color: on ? t.onAccent : t.faint, fontSize: 13 }}>✕</Text>
         </Pressable>
       )}
     </View>
@@ -51,7 +51,7 @@ export function Stepper({ value, onChange, step = 1, label }: { value: number; o
         onPress={() => onChange(Math.round((value + step) * 10) / 10)}
         style={[styles.stepBtn, { borderColor: t.accent, backgroundColor: t.accent }]}
         accessibilityLabel={`增加${label}`}>
-        <Text style={{ color: '#fff', fontSize: 16 }}>+</Text>
+        <Text style={{ color: t.onAccent, fontSize: 16 }}>+</Text>
       </Pressable>
     </View>
   );
@@ -79,7 +79,7 @@ export function Button({ label, onPress, ghost, disabled }: { label: string; onP
         ghost ? { borderColor: t.accent, borderWidth: 1 } : { backgroundColor: t.accent },
         disabled && { opacity: 0.4 },
       ]}>
-      <Text style={{ color: ghost ? t.accent : '#fff', fontWeight: '700' }}>{label}</Text>
+      <Text style={{ color: ghost ? t.accent : t.onAccent, fontWeight: '700' }}>{label}</Text>
     </Pressable>
   );
 }
